@@ -831,7 +831,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nextgis/leaflet-map-adapter@npm:4.0.0":
+"@nextgis/leaflet-map-adapter@npm:4.0.0, @nextgis/leaflet-map-adapter@npm:^4.0.0":
   version: 4.0.0
   resolution: "@nextgis/leaflet-map-adapter@npm:4.0.0"
   dependencies:
@@ -879,6 +879,17 @@ __metadata:
     events: "npm:*"
     strict-event-emitter-types: "npm:^2.0.0"
   checksum: 10c0/a7151141516e6dbd56eaba3d946dd117079738db3a5d382a8d9b99d44c07646d6f22e819d09a60e658cef80127939fdc44f31198e21503dc8faa0c73bc2e72de
+  languageName: node
+  linkType: hard
+
+"@nextgis/ngw-leaflet@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "@nextgis/ngw-leaflet@npm:4.0.0"
+  dependencies:
+    "@nextgis/leaflet-map-adapter": "npm:4.0.0"
+    "@nextgis/ngw-map": "npm:4.0.0"
+    leaflet.wms: "npm:*"
+  checksum: 10c0/a3e39444a5d9a662b49d8eb4c7af8abf96300a90d093d20312a2cd4d6bf20ea8e02080ffea250059af14c0c3a770d428ac4895a1382fe7b18af96ee00452c5a5
   languageName: node
   linkType: hard
 
@@ -1801,9 +1812,9 @@ __metadata:
   linkType: hard
 
 "axe-core@npm:^4.10.0":
-  version: 4.13.0
-  resolution: "axe-core@npm:4.13.0"
-  checksum: 10c0/0e3be8be10eea64beddefd3007e1425424ff60c26c5f4d5f748ec48c2825356839c02ad4167fc1f03a6d84ecd82108f49fb2846ab7fe949273787391745561ca
+  version: 4.14.0
+  resolution: "axe-core@npm:4.14.0"
+  checksum: 10c0/8aaa0bf748e0dcf202e8f837951a37b28b4b62d639bed58c07a6890bf035ed6a11ede9f4006db9ca8041db821dc80476c27cff08fd70afa9195ee58fb995a958
   languageName: node
   linkType: hard
 
@@ -2881,7 +2892,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "gis-egis-nao@workspace:."
   dependencies:
+    "@nextgis/leaflet-map-adapter": "npm:^4.0.0"
     "@nextgis/ngw-connector": "npm:^4.0.0"
+    "@nextgis/ngw-leaflet": "npm:^4.0.0"
     "@nextgis/react-ngw-leaflet": "npm:^4.0.0"
     "@tailwindcss/postcss": "npm:^4"
     "@types/leaflet": "npm:^1.9.22"
@@ -3487,7 +3500,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"leaflet.wms@npm:^0.2.0":
+"leaflet.wms@npm:*, leaflet.wms@npm:^0.2.0":
   version: 0.2.0
   resolution: "leaflet.wms@npm:0.2.0"
   dependencies:

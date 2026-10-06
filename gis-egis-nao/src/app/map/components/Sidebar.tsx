@@ -54,7 +54,7 @@ export default function Sidebar({
     localLayers.length > 0 && localLayers.every((l) => l.active);
   const buttonText = isAllActive ? "Скрыть все" : "Показать все";
   return (
-    <div className=" w-[320px] bg-white shadow-xl flex flex-col border-gray-200 h-sidebar overflow-hidden right-0 absolute z-10 top-[58px]">
+    <aside className=" w-[320px] bg-white shadow-xl flex flex-col border-gray-200 h-sidebar overflow-hidden right-0 absolute z-[1000] top-[58px]">
       {/* Статистика */}
       <div className="p-[16px] flex flex-col gap-[12px] bg-white border-b-[2px] border-t border-black/10">
         <p className="text-xs text-gray-500 uppercase tracking-wider">
@@ -145,6 +145,6 @@ export default function Sidebar({
         <p>Система координат: WGS 84</p>
         <p>Обновлено 29.09.2026</p>
       </div>
-    </div>
+    </aside>
   );
 }

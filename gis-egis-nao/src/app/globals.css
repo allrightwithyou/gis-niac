@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@import "leaflet/dist/leaflet.css";
 :root {
   --background:  var(--color-bgpage);
   --foreground: #171717;
@@ -37,4 +37,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   background: var(--background);
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
 }
