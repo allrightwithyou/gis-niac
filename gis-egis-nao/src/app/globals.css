@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
+
 :root {
   --background:  var(--color-bgpage);
   --foreground: #171717;

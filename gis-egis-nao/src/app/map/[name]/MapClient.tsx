@@ -3,6 +3,7 @@
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { useEffect, useRef, useState } from "react";
+import "@nextgis/leaflet-map-adapter/lib/leaflet-map-adapter.css";
 
 interface SectionData {
   name: string;
