@@ -22,7 +22,7 @@ export default function Card({
   return (
     <Link
       href={link}
-      className="h-full group bg-white p-[20px] gap-[16px] flex flex-col items-start max-w-[220px] border-[1.5px] border-black/[12%] rounded-[12px] min-w-[170px] max-h-[240px] shadow-[1px] hover:[box-shadow:inset_0_-8px_24px_0_var(--shadow-color)]"
+      className="h-full shadow-xl group bg-white p-[20px] gap-[16px] flex flex-col items-start max-w-[220px] border-[1.5px] border-margin rounded-[12px] min-w-[170px] max-h-[240px] shadow-[1px] hover:[box-shadow:inset_0_-8px_24px_0_var(--shadow-color)]"
       style={{ "--shadow-color": shadowColor } as React.CSSProperties}
     >
       <div className=" px-[8px] py-[2px] uppercase text-accent text-[12px]  rounded-full py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
@@ -40,7 +40,7 @@ export default function Card({
         </div>
       </div>
       <div
-        className="pt-[12px] border-t-[1.5px] border-black/[6%] w-full
+        className="pt-[12px] border-t-[1.5px] border-black/[12%] w-full
         flex items-start text-[11px] text-accent"
       >
         <span>{statistic}</span>

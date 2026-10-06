@@ -1,141 +1,27 @@
-<svg
-  width="40"
-  height="40"
-  viewBox="0 0 40 40"
-  fill="none"
-  xmlns="http://www.w3.org/2000/svg"
->
-  <!-- Пшеница -->
-  <path
-    d="M7 31V15"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
-
-  <path
-    d="M7 18L4.5 15.5M7 22L10 19M7 26L4.5 23.5M7 29L10 26.5"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
-
-  <path
-    d="M7 14C5.2 12.8 4.7 10.6 6.2 9.2C7.8 10.3 8.3 12.2 7 14Z"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-  />
-
-  <path
-    d="M7 18C5 17.5 3.8 15.7 4.5 14C6.4 14.2 7.5 15.8 7 18Z"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-  />
-
-  <path
-    d="M7 22C8.9 21.5 10.1 19.8 9.5 18.1C7.6 18.4 6.5 20 7 22Z"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-  />
-
-  <path
-    d="M7 26C5 25.5 3.8 23.7 4.5 22C6.4 22.2 7.5 23.8 7 26Z"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-  />
-
-  <!-- Трактор -->
-  <path
-    d="M15 27H27.5L29.5 23H25L23 18H17V27"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Большое заднее колесо -->
+  <circle cx="11" cy="27" r="8" stroke="#62748E" stroke-width="1.8"/>
+  <circle cx="11" cy="27" r="3" stroke="#62748E" stroke-width="1.6"/>
+  
+  <!-- Маленькое переднее колесо -->
+  <circle cx="30" cy="30" r="5" stroke="#62748E" stroke-width="1.8"/>
+  <circle cx="30" cy="30" r="2" stroke="#62748E" stroke-width="1.5"/>
+  
   <!-- Кабина -->
-  <path
-    d="M17 18V13H22L25 18"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-
+  <path d="M6 24 V13 H19 V24" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  
   <!-- Крыша -->
-  <path
-    d="M16 12H23.5"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
-
+  <path d="M5 13 H20" stroke="#62748E" stroke-width="1.8" stroke-linecap="round"/>
+  
+  <!-- Капот -->
+  <path d="M19 19 H31 L33 24" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Нижняя рама -->
+  <path d="M19 24 H25" stroke="#62748E" stroke-width="1.8" stroke-linecap="round"/>
+  
   <!-- Выхлоп -->
-  <path
-    d="M27 18V14C27 12.8 27.7 12 28.5 11.5"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
-
-  <!-- Заднее колесо -->
-  <circle
-    cx="18"
-    cy="28"
-    r="4"
-    stroke="#62748E"
-    stroke-width="1.5"
-  />
-
-  <circle
-    cx="18"
-    cy="28"
-    r="1.5"
-    stroke="#62748E"
-    stroke-width="1.5"
-  />
-
-  <!-- Переднее колесо -->
-  <circle
-    cx="29"
-    cy="28"
-    r="2.8"
-    stroke="#62748E"
-    stroke-width="1.5"
-  />
-
-  <circle
-    cx="29"
-    cy="28"
-    r="1"
-    stroke="#62748E"
-    stroke-width="1.5"
-  />
-
-  <!-- Нижняя часть -->
-  <path
-    d="M21.5 29H26"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
-
-  <!-- Поле -->
-  <path
-    d="M4 33C12 30.5 27 30.5 36 33"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
-
-  <path
-    d="M8 36C16 33.8 27 33.8 34 36"
-    stroke="#62748E"
-    stroke-width="1.5"
-    stroke-linecap="round"
-  />
+  <path d="M14 13 V7 H17" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Окно -->
+  <path d="M10 17 H16" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
 </svg>

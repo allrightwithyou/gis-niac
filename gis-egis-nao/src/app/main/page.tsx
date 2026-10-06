@@ -1,4 +1,4 @@
-import Hero from "@/components/Hero";
+import Hero from "@/app/main/components/Hero";
 export default function MainPage() {
   return (
     <div className="">

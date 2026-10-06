@@ -1,4 +1,13 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M29.1553 8.33008H10.8291C9.44893 8.33008 8.33008 9.44893 8.33008 10.8291V29.1553C8.33008 30.5355 9.44893 31.6543 10.8291 31.6543H29.1553C30.5355 31.6543 31.6543 30.5355 31.6543 29.1553V10.8291C31.6543 9.44893 30.5355 8.33008 29.1553 8.33008Z" stroke="#62748E" stroke-width="1.66602"/>
-<path d="M19.9922 14.9941V24.9902M14.9941 19.9922H24.9902" stroke="#62748E" stroke-width="2.08252" stroke-linecap="round"/>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Корпус сумки -->
+  <rect x="10" y="18" width="28" height="22" rx="3" 
+        stroke="#62748E" stroke-width="1.8" stroke-linejoin="round"/>
+  
+  <!-- Ручка -->
+  <path d="M18 18 V14 C18 12 20 10 24 10 C28 10 30 12 30 14 V18" 
+        stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Крест на сумке -->
+  <path opacity="0.6" d="M24 24 V34" stroke="#62748E" stroke-width="1.8" stroke-linecap="round"/>
+  <path opacity="0.6" d="M19 29 H29" stroke="#62748E" stroke-width="1.8" stroke-linecap="round"/>
 </svg>

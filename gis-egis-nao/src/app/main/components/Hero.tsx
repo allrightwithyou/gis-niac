@@ -1,4 +1,5 @@
 "use client";
+import { getWebMaps } from "@/app/lib/ngw";
 import Cards from "./Cards";
 import Image from "next/image";
 import { useState } from "react";
@@ -18,10 +19,11 @@ export default function Hero() {
       section.shortName.toLowerCase().includes(query)
     );
   });
+  getWebMaps();
   return (
     <div className="px-[24px]">
       <div className=" w-full max-w-[1400px] mx-auto">
-        <div className="flex gap-[6px] uppercase text-accent text-[12px]  rounded-md py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
+        <div className=" shadow-md flex gap-[6px] uppercase text-accent text-[12px]  rounded-md py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
           <Image
             className="block"
             src="/compas.svg"
@@ -42,7 +44,7 @@ export default function Hero() {
             режиме реального времени.
           </span>
         </div>
-        <div className=" flex gap-[5px] flex-row w-full max-w-[448px] py-[14px] pl-[44px] pr-[16px] border border-black/[12%] rounded-[12px] text-footer ">
+        <div className="shadow-md flex gap-[5px] flex-row w-full max-w-[448px] py-[14px] pl-[44px] pr-[16px] border border-black/[12%] rounded-[12px] text-footer ">
           <Image
             src="/search.svg"
             alt="Поиск"
@@ -61,7 +63,7 @@ export default function Hero() {
             aria-label="Поиск по разделам"
           ></input>
         </div>
-        <div className="flex gap-[32px] pt-[32px] border-t mt-[32px]">
+        <div className="flex gap-[32px] pt-[32px] border-t mt-[32px] border-margin">
           <div className="text-hero flex flex-col items-start">
             <span className="text-title text-[24px]">{section}</span>
             <span className="text-footer text-[12px]">Разделов</span>

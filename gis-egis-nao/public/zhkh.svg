@@ -1,6 +1,10 @@
 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M6.66406 34.9863V18.3262L19.9922 8.33008L33.3203 18.3262V34.9863H6.66406Z" stroke="#62748E" stroke-width="1.66602" stroke-linejoin="round"/>
-<path d="M24.1572 23.3242H15.8271C15.3671 23.3242 14.9941 23.6972 14.9941 24.1572V34.1533C14.9941 34.6134 15.3671 34.9863 15.8271 34.9863H24.1572C24.6173 34.9863 24.9902 34.6134 24.9902 34.1533V24.1572C24.9902 23.6972 24.6173 23.3242 24.1572 23.3242Z" stroke="#62748E" stroke-width="1.66602"/>
-<path d="M16.6602 18.3262H23.3242M19.9922 14.9941V21.6582" stroke="#62748E" stroke-width="1.66602" stroke-linecap="round"/>
-<path opacity="0.5" d="M13.3281 28.3223H16.6602M23.3242 28.3223H26.6563" stroke="#62748E" stroke-width="1.24951" stroke-linecap="round"/>
+  <!-- Крыша -->
+  <path d="M4 22 L20 6 L36 22" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Стены -->
+  <path d="M7 22 V36 H33 V22" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Дверь -->
+  <path d="M15 36 V26 H25 V36" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

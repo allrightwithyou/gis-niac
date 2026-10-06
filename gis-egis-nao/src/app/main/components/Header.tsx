@@ -3,12 +3,12 @@ import Link from "next/link";
 
 export default function Header() {
   return (
-    <header className="text-[16px] w-full bg-white/[98%] h-[64px] flex items-center border-b-[1.5px]">
+    <header className="text-[16px] w-full bg-white/[98%] h-[64px] flex items-center border-b-[1.5px] border-margin">
       <div className="px-[24px] flex w-full max-w-[1400px] mx-auto gap-[32px]">
         <div className="gap-[32px] flex w-full">
           <div className="gap-[12px] flex ">
             <Link
-              className="p-[2px]  bg-bglogo border-[1.5px] border-accent/30 rounded-[8px] hover:border-accent transition-all"
+              className="shadow-md p-[2px]  bg-bglogo border-[1.5px] border-accent/30 rounded-[8px] hover:border-accent transition-all"
               href="https://ниац.рф/"
             >
               <Image
@@ -30,19 +30,19 @@ export default function Header() {
           </div>
           <nav className="text-grey gap-[24px] flex flex-1 items-center ">
             <Link
-              href="main/news"
+              href="/main/news"
               className="hover:text-accent transition-colors"
             >
               Новости
             </Link>
             <Link
-              href="main/help"
+              href="/main/help"
               className="hover:text-accent transition-colors"
             >
               Справка
             </Link>
             <Link
-              href="main/system"
+              href="/main/system"
               className="hover:text-accent transition-colors"
             >
               О системе
