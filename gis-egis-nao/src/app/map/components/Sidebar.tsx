@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import ButtonSidebar from "./ButtonSidebar";
-import type { Layer } from "../[name]/MapClient";
+import type {
+  Layer,
+  IdentifyResult,
+} from "../[name]/MapClient";
 import type { Marker } from "@/app/main/data";
 
 interface SidebarProps {
@@ -10,7 +13,9 @@ interface SidebarProps {
   onClose?: () => void;
   markers?: Marker[];
   layers?: Layer[];
+  selectedFeature?: IdentifyResult | null;
   onLayerToggle?: (id: string) => void | Promise<void>;
+  onClearFeature?: () => void;
 }
 
 export default function Sidebar({
@@ -18,43 +23,120 @@ export default function Sidebar({
   onClose,
   markers = [],
   layers = [],
+  selectedFeature,
   onLayerToggle,
+  onClearFeature,
 }: SidebarProps) {
   const [localLayers, setLocalLayers] = useState<Layer[]>(layers);
-  
+
   useEffect(() => {
     setLocalLayers(layers);
   }, [layers]);
 
   const handleToggle = (id: string) => {
-  void onLayerToggle?.(id);
-};
-
-  const handleBulkAction = () => {
-    const areAllActive =
-      localLayers.length > 0 && localLayers.every((layer) => layer.active);
-
-    setLocalLayers((prev) =>
-      prev.map((layer) => ({
-        ...layer,
-        active: !areAllActive,
-      })),
-    );
+    void onLayerToggle?.(id);
   };
 
   if (!isOpen) {
     return null;
   }
 
-  const totalMarkers = markers.reduce((sum, marker) => sum + marker.count, 0);
+  const totalMarkers = markers.reduce(
+    (sum, marker) => sum + marker.count,
+    0,
+  );
 
-  const isAllActive =
-    localLayers.length > 0 && localLayers.every((layer) => layer.active);
+  const featureFields: { key: string; value: string }[] = [];
 
-  const buttonText = isAllActive ? "Скрыть все" : "Показать все";
+  if (selectedFeature?.items?.length) {
+    const item = selectedFeature.items[0];
+
+    const properties =
+      item.properties ??
+      item.fields ??
+      item.feature?.properties ??
+      {};
+
+    for (const [key, value] of Object.entries(properties)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+
+      featureFields.push({
+        key,
+        value:
+          typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value),
+      });
+    }
+  }
+
+  const featureName =
+    selectedFeature?.items?.[0]?.name ??
+    featureFields.find(
+      (field) => field.key.toLowerCase() === "name",
+    )?.value ??
+    "Выбранный объект";
 
   return (
     <aside className=" w-[320px] bg-white shadow-xl flex flex-col border-gray-200 h-sidebar overflow-hidden right-0 absolute z-[1000] top-[58px]">
+      {/* Панель выбранного объекта */}
+      {selectedFeature && (
+        <div className="p-[16px] flex flex-col gap-[12px] bg-blue-50 border-b-[2px] border-blue-200">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-blue-600 uppercase tracking-wider font-semibold">
+              Объект
+            </p>
+
+            <button
+              type="button"
+              onClick={onClearFeature}
+              className="text-gray-400 hover:text-gray-700 transition-colors"
+              aria-label="Закрыть карточку объекта"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 4l8 8M12 4l-8 8"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <h3 className="text-[16px] font-semibold text-gray-900 break-words">
+            {featureName}
+          </h3>
+
+          {featureFields.length > 0 && (
+            <div className="flex flex-col gap-[6px] mt-[4px]">
+              {featureFields.map((field) => (
+                <div
+                  key={field.key}
+                  className="flex justify-between gap-[12px] text-[13px]"
+                >
+                  <span className="text-gray-500 capitalize">
+                    {field.key}
+                  </span>
+
+                  <span className="text-gray-900 font-medium text-right break-words">
+                    {field.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="p-[16px] flex flex-col gap-[12px] bg-white border-b-[2px] border-t border-black/10">
         <p className="text-xs text-gray-500 uppercase tracking-wider">
           Статистика
@@ -70,16 +152,16 @@ export default function Sidebar({
 
           <div className="flex shadow border-[2px] rounded-[12px] border-black/10 p-[12px] flex-col items-center justify-start">
             <span className="text-title text-[18px]">
-              {totalMarkers.toLocaleString()}
+              {layers.length}
             </span>
-            <span className="text-footer text-[12px]">Объектов</span>
+            <span className="text-footer text-[12px]">Слоёв</span>
           </div>
 
           <div className="flex shadow border-[2px] rounded-[12px] border-black/10 p-[12px] flex-col items-center justify-start">
             <span className="text-title text-[18px]">
-              {totalMarkers.toLocaleString()}
+              {selectedFeature?.items?.length ?? 0}
             </span>
-            <span className="text-footer text-[12px]">Объектов</span>
+            <span className="text-footer text-[12px]">Выбрано</span>
           </div>
         </div>
       </div>
@@ -89,15 +171,6 @@ export default function Sidebar({
           <span className="block text-[12px] text-gray-500 uppercase">
             Слои
           </span>
-
-          <button
-            className="text-accent text-[12px] hover:underline focus:outline-none"
-            type="button"
-            onClick={handleBulkAction}
-            aria-label={buttonText}
-          >
-            {buttonText}
-          </button>
         </div>
 
         <div className="p-[16px] text-wrap flex flex-col gap-[6px]">
@@ -138,7 +211,9 @@ export default function Sidebar({
               <span>{marker.label}</span>
             </div>
 
-            <span className="text-gray-500 font-medium">{marker.count}</span>
+            <span className="text-gray-500 font-medium">
+              {marker.count}
+            </span>
           </div>
         ))}
       </div>

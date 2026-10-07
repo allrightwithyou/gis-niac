@@ -41,7 +41,7 @@ export default function Card({
   // Открытое состояние
   if (isOpen) {
     return (
-      <div className="h-full bg-white p-[20px] flex flex-col max-w-[220px] min-w-[170px] min-h-[240px] border-[1.5px] border-margin rounded-[12px] shadow-xl">
+      <div className="h-full bg-white p-[20px] h-[240px] flex flex-col max-w-[220px] min-w-[170px] border-[1.5px] border-margin rounded-[12px] shadow-xl">
         {/* Заголовок */}
         <div className="flex items-start justify-between mb-[16px]">
           <div className="flex flex-col gap-[4px]">
