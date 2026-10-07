@@ -14,6 +14,10 @@ interface SidebarProps {
   markers?: Marker[];
   layers?: Layer[];
   selectedFeature?: IdentifyResult | null;
+  clickedCoordinates?: {
+    latitude: string;
+    longitude: string;
+  } | null;
   onLayerToggle?: (id: string) => void | Promise<void>;
   onClearFeature?: () => void;
 }
@@ -24,6 +28,7 @@ export default function Sidebar({
   markers = [],
   layers = [],
   selectedFeature,
+  clickedCoordinates,
   onLayerToggle,
   onClearFeature,
 }: SidebarProps) {
@@ -46,46 +51,66 @@ export default function Sidebar({
     0,
   );
 
-  const featureFields: { key: string; value: string }[] = [];
+  const featureCards = (selectedFeature?.items ?? []).map(
+    (item, index) => {
+      const properties =
+        item.properties ??
+        item.fields ??
+        item.feature?.properties ??
+        {};
 
-  if (selectedFeature?.items?.length) {
-    const item = selectedFeature.items[0];
+      const fields: { key: string; value: string }[] = [];
 
-    const properties =
-      item.properties ??
-      item.fields ??
-      item.feature?.properties ??
-      {};
+      for (const [key, value] of Object.entries(properties)) {
+        if (value === null || value === undefined) {
+          continue;
+        }
 
-    for (const [key, value] of Object.entries(properties)) {
-      if (value === null || value === undefined) {
-        continue;
+        fields.push({
+          key,
+          value:
+            typeof value === "object"
+              ? JSON.stringify(value)
+              : String(value),
+        });
       }
 
-      featureFields.push({
-        key,
-        value:
-          typeof value === "object"
-            ? JSON.stringify(value)
-            : String(value),
-      });
-    }
-  }
+      const name =
+        item.label ??
+        item.name ??
+        fields.find((field) => field.key.toLowerCase() === "name")
+          ?.value ??
+        "Выбранный объект";
 
-  const featureName =
-    selectedFeature?.items?.[0]?.name ??
-    featureFields.find(
-      (field) => field.key.toLowerCase() === "name",
-    )?.value ??
-    "Выбранный объект";
+      return {
+        key: `${index}-${item.id ?? ""}`,
+        layerName: item.layerName,
+        name,
+        fields,
+      };
+    },
+  );
 
   return (
-    <aside className=" w-[320px] bg-white shadow-xl flex flex-col border-gray-200 h-sidebar overflow-hidden right-0 absolute z-[1000] top-[58px]">
+    <aside className=" w-[320px] bg-white shadow-xl flex flex-col border-black/10 h-sidebar overflow-hidden right-0 absolute z-[1000] top-[58px]">
+      {/* Точка клика по карте */}
+      {clickedCoordinates && (
+        <div className="px-[16px] py-[10px] bg-gray-50 border-b border-gray-200 text-[13px] flex flex-col gap-[4px]">
+          <span className="text-gray-500">Точка клика:</span>
+          <span className="text-gray-900 font-mono">
+            {clickedCoordinates.latitude}
+          </span>
+          <span className="text-gray-900 font-mono">
+            {clickedCoordinates.longitude}
+          </span>
+        </div>
+      )}
+
       {/* Панель выбранного объекта */}
-      {selectedFeature && (
-        <div className="p-[16px] flex flex-col gap-[12px] bg-blue-50 border-b-[2px] border-blue-200">
+      {selectedFeature && ( 
+        <div className="p-[16px] flex flex-col gap-[12px] border-b-[2px] max-h-[50%] overflow-y-auto">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-blue-600 uppercase tracking-wider font-semibold">
+            <p className="text-xs text-gray-500 uppercase tracking-wider ">
               Объект
             </p>
 
@@ -112,28 +137,41 @@ export default function Sidebar({
             </button>
           </div>
 
-          <h3 className="text-[16px] font-semibold text-gray-900 break-words">
-            {featureName}
-          </h3>
+          {featureCards.map((card) => (
+            <div
+              key={card.key}
+              className="flex flex-col gap-[6px] pb-[12px] last:border-b-0 last:pb-0"
+            >
+              {card.layerName && (
+                <p className="text-[12px] text-gray-500">
+                  {card.layerName}
+                </p>
+              )}
 
-          {featureFields.length > 0 && (
-            <div className="flex flex-col gap-[6px] mt-[4px]">
-              {featureFields.map((field) => (
-                <div
-                  key={field.key}
-                  className="flex justify-between gap-[12px] text-[13px]"
-                >
-                  <span className="text-gray-500 capitalize">
-                    {field.key}
-                  </span>
+              <h3 className="text-[16px] text-xs text-gray-500 break-words">
+                {card.name}
+              </h3>
 
-                  <span className="text-gray-900 font-medium text-right break-words">
-                    {field.value}
-                  </span>
+              {card.fields.length > 0 && (
+                <div className="flex flex-col gap-[6px] mt-[4px]">
+                  {card.fields.map((field) => (
+                    <div
+                      key={field.key}
+                      className="flex justify-between gap-[12px] text-[13px]"
+                    >
+                      <span className="text-gray-500 capitalize">
+                        {field.key}
+                      </span>
+
+                      <span className="text-gray-900 font-medium text-right break-words">
+                        {field.value}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          ))}
         </div>
       )}
 
@@ -192,7 +230,7 @@ export default function Sidebar({
 
       <div className="p-[16px] bg-gray-50 border-t-[2px] border-gray-100">
         <span className="block text-[12px] uppercase text-gray-500 mb-[8px]">
-          Метки
+          Легенда
         </span>
 
         {markers.map((marker) => (

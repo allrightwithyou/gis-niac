@@ -1,40 +1,27 @@
 "use client";
 
-import { getWebMaps } from "@/app/lib/ngw";
 import Cards from "./Cards";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { sectionData } from "@/app/main/data";
 import type { WebMap } from "./Card";
 
-export default function Hero() {
+type HeroProps = {
+  webMaps: WebMap[];
+};
+
+export default function Hero({ webMaps }: HeroProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [search, setText] = useState("");
-  const [webMaps, setWebMaps] = useState<WebMap[]>([]);
+  
 
   const section = 12;
   const dataUpdate = "29.09.2026";
   const objectMap = "4500+";
   const layersMap = "200+";
 
-  // Загружаем карты из API один раз
-  useEffect(() => {
-    async function loadWebMaps() {
-      try {
-        const data = await getWebMaps();
+  
 
-        console.log("WEB MAPS:", data);
-
-        setWebMaps(data);
-      } catch (error) {
-        console.error("Ошибка загрузки карт:", error);
-      }
-    }
-
-    loadWebMaps();
-  }, []);
-
-  // Фильтрация разделов по поиску
   const filteredSections = sectionData.filter((section) => {
     const query = search.toLowerCase().trim();
 
@@ -51,7 +38,6 @@ export default function Hero() {
   return (
     <div className="px-[24px]">
       <div className="w-full max-w-[1400px] mx-auto">
-
         {/* Регион */}
         <div className="shadow-md flex gap-[6px] uppercase text-accent text-[12px] rounded-md py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
           <Image
@@ -61,19 +47,14 @@ export default function Hero() {
             width={12}
             height={12}
           />
-
           Ненецкий автономный округ
         </div>
 
         {/* Заголовок */}
         <div className="pt-[24px] text-[48px]/[60px]">
-          <h1 className="text-title">
-            Единая геоинформационная
-          </h1>
+          <h1 className="text-title">Единая геоинформационная</h1>
 
-          <h1 className="text-accent">
-            система НАО
-          </h1>
+          <h1 className="text-accent">система НАО</h1>
         </div>
 
         {/* Описание */}
@@ -111,57 +92,35 @@ export default function Hero() {
 
         {/* Статистика */}
         <div className="flex gap-[32px] pt-[32px] border-t mt-[32px] border-margin">
-
           <div className="text-hero flex flex-col items-start">
-            <span className="text-title text-[24px]">
-              {section}
-            </span>
+            <span className="text-title text-[24px]">{section}</span>
 
-            <span className="text-footer text-[12px]">
-              Разделов
-            </span>
+            <span className="text-footer text-[12px]">Разделов</span>
           </div>
 
           <div className="text-hero flex flex-col items-start">
-            <span className="text-title text-[24px]">
-              {objectMap}
-            </span>
+            <span className="text-title text-[24px]">{objectMap}</span>
 
-            <span className="text-footer text-[12px]">
-              Объектов
-            </span>
+            <span className="text-footer text-[12px]">Объектов</span>
           </div>
 
           <div className="text-hero flex flex-col items-start">
-            <span className="text-title text-[24px]">
-              {layersMap}
-            </span>
+            <span className="text-title text-[24px]">{layersMap}</span>
 
-            <span className="text-footer text-[12px]">
-              Слоёв данных
-            </span>
+            <span className="text-footer text-[12px]">Слоёв данных</span>
           </div>
 
           <div className="pb-[64px] text-hero flex flex-col items-start">
-            <span className="text-title text-[24px]">
-              {dataUpdate}
-            </span>
+            <span className="text-title text-[24px]">{dataUpdate}</span>
 
-            <span className="text-footer text-[12px]">
-              Обновлено
-            </span>
+            <span className="text-footer text-[12px]">Обновлено</span>
           </div>
-
         </div>
 
         {/* Карточки */}
         <div className="pt-[64px]">
-          <Cards
-            cards={filteredSections}
-            webMaps={webMaps}
-          />
+          <Cards cards={filteredSections} webMaps={webMaps} />
         </div>
-
       </div>
     </div>
   );

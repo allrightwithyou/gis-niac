@@ -1,4 +1,4 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -6,16 +6,25 @@ const nextConfig: NextConfig = {
   },
 
   transpilePackages: [
-    '@nextgis/ngw-leaflet',
-    '@nextgis/leaflet-map-adapter',
-    '@nextgis/ngw-map',
+    "@nextgis/ngw-leaflet",
+    "@nextgis/leaflet-map-adapter",
+    "@nextgis/ngw-map",
   ],
 
   turbopack: {
     resolveAlias: {
-      '@nextgis/leaflet-map-adapter/src/style':
-        '@nextgis/leaflet-map-adapter/lib/leaflet-map-adapter.css',
+      "@nextgis/leaflet-map-adapter/src/style":
+        "@nextgis/leaflet-map-adapter/lib/leaflet-map-adapter.css",
     },
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: "/ngw-proxy/:path*",
+        destination: "https://gisnao.adm-nao.ru/ngw/:path*",
+      },
+    ];
   },
 };
 

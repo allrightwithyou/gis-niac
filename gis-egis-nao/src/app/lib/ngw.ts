@@ -1,27 +1,61 @@
-import NgwConnector from "@nextgis/ngw-connector";
-
-export const ngw = new NgwConnector({
-  baseUrl: process.env.NEXT_PUBLIC_NGW_BASE_URL!,
-});
-
-interface WebMapItem {
+export interface WebMapItem {
   id: number;
   name: string;
   keyname?: string;
   description?: string;
 }
 
+interface NgwResourceItem {
+  resource: {
+    id: number;
+    cls?: string;
+    display_name: string;
+    keyname?: string | null;
+    description?: string | null;
+  };
+}
+
 export async function getWebMaps(): Promise<WebMapItem[]> {
-  try {
-    const resources = await ngw.getResourcesBy({ cls: "webmap" });
+  const baseUrl = process.env.NGW_BASE_URL?.replace(/\/$/, "");
 
-    if (!Array.isArray(resources)) {
-      throw new Error("Unexpected response: resources is not an array");
-    }
+  if (!baseUrl) {
+    throw new Error("NGW_BASE_URL is not set");
+  }
 
-    console.log("getWebMaps response:", resources);
+  // search — все webmap, к которым есть доступ (не только parent=0)
+  const url = `${baseUrl}/api/resource/search/?cls=webmap`;
 
-    return resources.map((item) => {
+  const headers: HeadersInit = {
+    Accept: "application/json",
+  };
+
+  if (process.env.NGW_LOGIN && process.env.NGW_PASSWORD) {
+    const token = Buffer.from(
+      `${process.env.NGW_LOGIN}:${process.env.NGW_PASSWORD}`,
+    ).toString("base64");
+    headers.Authorization = `Basic ${token}`;
+  }
+
+  const response = await fetch(url, {
+    headers,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`NGW search failed: ${response.status} ${url}`);
+  }
+
+  const resources: unknown = await response.json();
+
+  if (!Array.isArray(resources)) {
+    throw new Error("Unexpected response: resources is not an array");
+  }
+
+  console.log("getWebMaps count:", resources.length);
+
+  return (resources as NgwResourceItem[])
+    .filter((item) => item.resource?.cls === "webmap")
+    .map((item) => {
       const resource = item.resource;
       return {
         id: resource.id,
@@ -30,8 +64,4 @@ export async function getWebMaps(): Promise<WebMapItem[]> {
         description: resource.description ?? undefined,
       };
     });
-  } catch (error) {
-    console.error("getWebMaps failed:", error);
-    throw error; // пробрасываем дальше, чтобы компонент мог обработать
-  }
 }
