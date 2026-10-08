@@ -7,7 +7,7 @@ interface MainLayoutProps {
 
 export default function MainPageLayout({ children }: MainLayoutProps) {
   return (
-    <div>
+    <div className="min-w-[600px]">
       <Header />
       <main>{children}</main>
       <Footer />

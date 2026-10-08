@@ -12,7 +12,7 @@ import Sidebar, {
 import "@nextgis/leaflet-map-adapter/lib/leaflet-map-adapter.css";
 
 import type { Layer, SectionData, WebMapItem } from "./types";
-
+import MapTools from "../components/MapTools";
 export type { Layer } from "./types";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1305,9 +1305,10 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
       {/* Основная область с картой */}
       <main className="relative min-h-0 flex-1">
+        
         {/* Контейнер карты — заполняет всё доступное пространство */}
         <div ref={mapElement} className="h-full w-full" />
-
+        
         {/* Строка координат: обновляется напрямую через ref (без re-render) */}
         {/* Позиционируется в правом нижнем углу, отступ зависит от состояния сайдбара */}
         <div
