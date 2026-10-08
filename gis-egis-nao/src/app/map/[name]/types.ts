@@ -30,6 +30,7 @@ export interface LayerResource {
 }
 
 export interface WebMapItem {
+  id?: number | string;
   item_type: "layer" | "group" | "root";
   display_name?: string;
   layer_enabled?: boolean;
@@ -64,5 +65,7 @@ export interface LegendItem {
 
 export interface SectionData {
   name: string;
-  title: string;
+  category: string;    
+  shortName: string;   
+  img: string; 
 }

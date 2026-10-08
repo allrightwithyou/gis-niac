@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background:  var(--color-bgpage);
+  --background: var(--color-bgpage);
   --foreground: #171717;
 }
 @theme {
   --color-bglogo: #f0fdfa;
   --color-accent: #009689;
-  --color-grey: #64748B;
-  --color-white: #FFFFFF;
-  --color-profile: #F8FAFC;
-  --color-footer: #90A1B9;
-  --color-title: #0F172B;
-  --color-hero: #62748E;
-  --color-bgpage: #F0F4F8;
-  --color-card: #1D293D;
+  --color-grey: #64748b;
+  --color-white: #ffffff;
+  --color-profile: #f8fafc;
+  --color-footer: #90a1b9;
+  --color-title: #0f172b;
+  --color-hero: #62748e;
+  --color-bgpage: #f0f4f8;
+  --color-card: #1d293d;
   --color-margin: rgba(0, 0, 0, 0.12);
-  --height-sidebar:calc(100vh - 58px);
+  --height-sidebar: calc(100vh - 58px);
 }
 
 @theme inline {
@@ -44,7 +44,6 @@ body {
   height: 100%;
   margin: 0;
 }
-
 
 .leaflet-container {
   width: 100%;

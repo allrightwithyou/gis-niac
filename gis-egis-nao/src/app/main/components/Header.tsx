@@ -61,13 +61,13 @@ export default function Header() {
             >
               <path
                 d="M24 24.75V23.25C24 22.4544 23.6839 21.6913 23.1213 21.1287C22.5587 20.5661 21.7956 20.25 21 20.25H15C14.2044 20.25 13.4413 20.5661 12.8787 21.1287C12.3161 21.6913 12 22.4544 12 23.25V24.75"
-                stroke-width="1.125"
-                stroke-linecap="round"
+                strokeWidth="1.125"
+                strokeLinecap="round"
                 className="opacity-30"
               />
               <path
                 d="M18 17.25C19.6569 17.25 21 15.9069 21 14.25C21 12.5931 19.6569 11.25 18 11.25C16.3431 11.25 15 12.5931 15 14.25C15 15.9069 16.3431 17.25 18 17.25Z"
-                stroke-width="1.125"
+                strokeWidth="1.125"
                 className="opacity-30"
               />
             </svg>

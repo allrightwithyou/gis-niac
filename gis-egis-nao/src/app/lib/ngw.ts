@@ -52,7 +52,7 @@ export async function getWebMaps(): Promise<WebMapItem[]> {
   }
 
   console.log("getWebMaps count:", resources.length);
-
+  console.log(resources)
   return (resources as NgwResourceItem[])
     .filter((item) => item.resource?.cls === "webmap")
     .map((item) => {

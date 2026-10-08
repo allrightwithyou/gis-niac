@@ -1,11 +1,16 @@
-import { CardProps } from "@/app/main/components/Card";
-
-export interface SectionData extends CardProps {
+export interface SectionData {
+  id: number;
+  name: string;
+  shortName: string;
+  category: string;
+  statistic: string;
+  img: string;
+  shadowColor: string;
   resourceIds: number[];
 }
-
 export const sectionData: SectionData[] = [
   {
+    id: 1,
     name: "Агропромышленный комплекс",
     shortName: "АПК",
     category: "Сельское хозяйство",
@@ -15,6 +20,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [262, 480],
   },
   {
+    id: 2,
     name: "Ресурсы",
     shortName: "Ресурсы",
     category: "Природные ресурсы",
@@ -24,6 +30,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [484],
   },
   {
+    id: 3,
     name: "Образование и спорт",
     shortName: "Соц",
     category: "Инфраструктура",
@@ -33,6 +40,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [254],
   },
   {
+    id: 4,
     name: "Экология",
     shortName: "Эко",
     category: "Мониторинг среды",
@@ -42,6 +50,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [490, 506, 488, 725],
   },
   {
+    id: 5,
     name: "Реестр жилищного фонда",
     shortName: "ЖКХ",
     category: "Непригодное жильё",
@@ -51,6 +60,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [614],
   },
   {
+    id: 6,
     name: "Культура",
     shortName: "Культура",
     category: "Культура и туризм",
@@ -60,6 +70,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [384, 389],
   },
   {
+    id: 7,
     name: "Гектар в Арктике",
     shortName: "Арктика",
     category: "Земельные участки",
@@ -69,6 +80,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [476],
   },
   {
+    id: 8,
     name: "Данные ДЗЗ",
     shortName: "ДЗЗ",
     category: "Дистанционное зондирование",
@@ -78,6 +90,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [470],
   },
   {
+    id: 9,
     name: "Информатизация и связь",
     shortName: "ИТ",
     category: "Цифровая инфраструктура",
@@ -87,6 +100,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [649, 701],
   },
   {
+    id: 10,
     name: "Здравоохранение",
     shortName: "Мед",
     category: "Медицинские объекты",
@@ -96,6 +110,7 @@ export const sectionData: SectionData[] = [
     resourceIds: [695],
   },
   {
+    id: 11,
     name: "Инвестиции",
     shortName: "Бизнес",
     category: "Инвестиционные площадки",
@@ -105,12 +120,13 @@ export const sectionData: SectionData[] = [
     resourceIds: [536],
   },
   {
+    id: 12,
     name: "Гражданская защита",
     shortName: "ЧС",
     category: "ЧС и безопасность",
     statistic: "28 служб",
     img: "/chs.svg",
     shadowColor: "#D4E15740",
-    resourceIds: [497,557],
+    resourceIds: [497, 557],
   },
 ];

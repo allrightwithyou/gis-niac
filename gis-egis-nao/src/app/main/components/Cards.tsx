@@ -1,8 +1,8 @@
 import Card from "./Card";
-import type { CardProps, WebMap } from "./Card";
-
+import type { WebMap } from "./Card";
+import type { SectionData } from "../data";
 interface CardsProps {
-  cards: CardProps[];
+  cards: SectionData[];
   webMaps: WebMap[];
 }
 
@@ -18,10 +18,9 @@ export default function Cards({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-[16px]">
-        {cards.map((card) => (
+        {cards.map((section) => (
           <Card
-            key={card.name}
-            {...card}
+            key={section.id} section={section}
             webMaps={webMaps}
           />
         ))}
