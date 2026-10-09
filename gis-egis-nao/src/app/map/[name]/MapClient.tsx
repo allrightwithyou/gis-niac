@@ -6,13 +6,25 @@ import Sidebar, {
   type LegendItem,
   type BasemapItem,
 } from "../components/Sidebar";
-//import MapTools from "../components/MapTools";
+import {
+  EcomonPanel,
+  type EcomonApi,
+  type EcomonFeature,
+} from "../components/EcomonPanel";
+import {
+  CoordInputPanel,
+  CoordPickerPanel,
+  SelectToolPanel,
+  type SelectOption,
+} from "../components/MapToolPanels";
 
 // Стили адаптера Leaflet — без них карта и тайлы отрисуются некорректно
 import "@nextgis/leaflet-map-adapter/lib/leaflet-map-adapter.css";
+// Стили плагина измерений (JS плагина подгружается динамически, только если он нужен)
+import "leaflet-measure/dist/leaflet-measure.css";
 
 import type { Layer, SectionData, WebMapItem } from "./types";
-import MapTools from "../components/MapTools";
+
 export type { Layer } from "./types";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -86,6 +98,29 @@ interface LeafletMapLike {
     remove: () => void;
   };
   getZoom(): number;
+  addControl?: (control: unknown) => void;
+  removeControl?: (control: unknown) => void;
+}
+
+/** Глобальный объект Leaflet (плагин leaflet-measure регистрирует себя в L.control). */
+interface LeafletGlobal {
+  control?: {
+    measure?: (options: Record<string, unknown>) => unknown;
+  };
+}
+
+/** Опции кнопки-переключателя, создаваемой через NgwMap.createToggleControl. */
+interface ToggleControlOptions {
+  getStatus?: () => boolean;
+  onClick: (status: boolean) => void;
+  html: string;
+  title: string;
+  addClassOn: string;
+  addClassOff: string;
+}
+
+interface ToggleControlLike {
+  changeStatus?: (status: boolean) => void;
 }
 
 /** Универсальный интерфейс подписки на события (SDK emitter или аналог). */
@@ -114,11 +149,7 @@ interface NgwSelectEvent {
 interface GeoJsonLayerOptions {
   data: GeoJSONFeature | GeoJSONFeature[];
   id: string;
-  paint?: () => {
-    color: string;
-    opacity: number;
-    weight: number;
-  };
+  paint?: () => Record<string, unknown>;
 }
 
 /** Адаптер слоя NGW — используется для получения легенды. */
@@ -161,6 +192,18 @@ interface NgwMapInstance {
   enableSelection?: () => void;
   disableSelection?: () => void;
   emitter?: EventEmitter;
+  connector?: {
+    get: (
+      name: string,
+      options: unknown,
+      params: Record<string, unknown>,
+    ) => Promise<unknown>;
+  };
+  createToggleControl?: (options: ToggleControlOptions) => unknown;
+  addControl?: (
+    control: unknown,
+    position: string,
+  ) => Promise<ToggleControlLike | undefined>;
   mapAdapter?: {
     map?: LeafletMapLike;
   };
@@ -187,6 +230,224 @@ interface MapClientProps {
 
 /** Радиус поиска объектов вокруг точки клика (в пикселях). */
 const IDENTIFY_PIXEL_RADIUS = 15;
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  ИНСТРУМЕНТЫ КАРТЫ: КОНФИГУРАЦИЯ
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Инструменты с панелью (кнопка-переключатель + React-панель). */
+type PanelToolId =
+  | "fishTool"
+  | "settlTool"
+  | "zsoTool"
+  | "ccfTool"
+  | "ecomonTool"
+  | "coordTool"
+  | "coordFromMapTool";
+
+/** Все инструменты: панельные + измерение (готовый контрол Leaflet). */
+export type ToolId = PanelToolId | "measureTool";
+
+/**
+ * КАКИЕ ИНСТРУМЕНТЫ ПОКАЗЫВАТЬ НА КАКИХ КАРТАХ.
+ * Ключ — resourceId веб-карты в NextGIS, значение — список инструментов.
+ * Для карт, которых здесь нет, инструменты не появляются.
+ */
+const MAP_TOOLS: Record<number, ToolId[]> = {
+  // Пример (подставьте свои ID):
+ 490: ["fishTool", "settlTool", "zsoTool", "ccfTool","coordFromMapTool","coordTool","ecomonTool","measureTool"],
+  262: ["fishTool", "settlTool", "zsoTool", "ccfTool","coordFromMapTool","coordTool","ecomonTool","measureTool"],
+};
+
+/** Угол карты для кнопок инструментов (NgwMap и Leaflet называют углы по-разному). */
+const TOOLS_NGW_POSITION = "top-left";
+const TOOLS_LEAFLET_POSITION = "topleft";
+
+const TOOL_META: Record<PanelToolId, { title: string; icon: string }> = {
+  fishTool: { title: "Рыболовные участки", icon: "🐟" },
+  settlTool: { title: "Населённые пункты", icon: "🏘️" },
+  zsoTool: { title: "Зоны санитарной охраны", icon: "🛡️" },
+  ccfTool: { title: "Объекты капитального строительства", icon: "🏢" },
+  ecomonTool: { title: "Экологический мониторинг", icon: "🌿" },
+  coordTool: { title: "Добавить объекты по координатам", icon: "🧭" },
+  coordFromMapTool: { title: "Получение координат по клику", icon: "📌" },
+};
+
+/** Объект слоя NGW в виде GeoJSON (id нужен для выбора из списка). */
+/** Строка таблицы атрибутов слоя (ответ feature_layer.feature.collection). */
+interface ToolRow {
+  id: number;
+  fields: Record<string, unknown>;
+}
+
+interface ToolFeature extends GeoJSONFeature {
+  id?: string | number;
+}
+
+/**
+ * Описание инструмента «выбрать объект из списка слоя».
+ * Четыре таких инструмента отличаются только слоем, подписью и действием,
+ * поэтому реализованы одним общим кодом.
+ */
+interface SelectToolConfig {
+  /** display_name слоя в дереве веб-карты */
+  layerName: string;
+  placeholder: string;
+  getLabel: (props: Record<string, unknown>) => string;
+  /** Объекты с одинаковым ключом попадают в один пункт списка (и сортируются по нему) */
+  groupKey?: (props: Record<string, unknown>) => string;
+  /** identify — показать карточку в сайдбаре и подсветить; zoom — только приблизить */
+  action: "identify" | "zoom";
+}
+
+/** «дд.мм.гггг» → «гггг/мм/дд» (для сортировки по дате). */
+function toSortableDate(value: unknown): string {
+  const [day, month, year] = String(value ?? "").split(".");
+  return year && month && day ? `${year}/${month}/${day}` : String(value ?? "");
+}
+
+const SELECT_TOOLS: Partial<Record<PanelToolId, SelectToolConfig>> = {
+  fishTool: {
+    layerName: "Рыболовные участки",
+    placeholder: "Выберите участок",
+    getLabel: (p) => String(p.name ?? ""),
+    action: "identify",
+  },
+  settlTool: {
+    layerName: "Населённые пункты",
+    placeholder: "Выберите нас.пункт",
+    getLabel: (p) => String(p.Name ?? ""),
+    action: "zoom",
+  },
+  zsoTool: {
+    layerName: "Зоны санитарной охраны",
+    placeholder: "Выберите распоряж.",
+    getLabel: (p) =>
+      p.order_number !== "-"
+        ? `№ ${p.order_number} от ${p.order_date}`
+        : "Отсутствуют данные",
+    groupKey: (p) => `${toSortableDate(p.order_date)}${p.order_number}`,
+    action: "identify",
+  },
+  ccfTool: {
+    layerName: "Объекты капитального строительства",
+    placeholder: "Выберите объект",
+    getLabel: (p) => String(p.Name ?? ""),
+    groupKey: (p) => String(p.Name ?? ""),
+    action: "identify",
+  },
+};
+
+/** Собирает пункты выпадающего списка: группирует по groupKey и сортирует. */
+function buildSelectOptions(
+  config: SelectToolConfig,
+  rows: ToolRow[],
+): SelectOption[] {
+  const groups = new Map<
+    string,
+    { label: string; sortKey: string; ids: number[] }
+  >();
+
+  for (const row of rows) {
+    const props = isRecord(row.fields) ? row.fields : {};
+    const label = config.getLabel(props);
+    const key = config.groupKey?.(props) ?? String(row.id);
+    const group = groups.get(key);
+
+    if (group) {
+      group.ids.push(row.id);
+    } else {
+      groups.set(key, {
+        label,
+        sortKey: config.groupKey ? key : label,
+        ids: [row.id],
+      });
+    }
+  }
+
+  return [...groups.values()]
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey, "ru"))
+    .map((group) => ({ value: group.ids.join(","), label: group.label }));
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  ИНСТРУМЕНТЫ КАРТЫ: КООРДИНАТЫ
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Разбирает текст с координатами, по одной точке в строке («широта долгота»).
+ * Понимает: десятичные градусы (69.5 33.2 или 69,5 33,2),
+ * градусы+минуты (69 30 33 12), ГМС (69°02′30″ 33°05′00″) и буквы полушарий (S/Ю, W/З).
+ * Если широта явно вне диапазона, а долгота подходит — меняет их местами.
+ */
+function parseCoordinates(text: string): MapPoint[] {
+  const result: MapPoint[] = [];
+
+  for (const line of text.split(/\r?\n/)) {
+    const tokens = line.match(/-?\d+(?:[.,]\d+)?/g);
+    if (!tokens) continue;
+
+    const values = tokens.map((token) => Number(token.replace(",", ".")));
+
+    // Градусы[, минуты[, секунды]] → десятичные градусы; знак берётся только у градусов
+    const toDegrees = (from: number, count: number): number => {
+      const [d = 0, m = 0, s = 0] = values
+        .slice(from, from + count)
+        .map((value) => Math.abs(value));
+      const value = d + m / 60 + s / 3600;
+      return tokens[from].startsWith("-") ? -value : value;
+    };
+
+    let lat: number;
+    let lng: number;
+
+    if (values.length === 2) {
+      [lat, lng] = values;
+    } else if (values.length === 4) {
+      lat = toDegrees(0, 2);
+      lng = toDegrees(2, 2);
+    } else if (values.length === 6) {
+      lat = toDegrees(0, 3);
+      lng = toDegrees(3, 3);
+    } else {
+      continue;
+    }
+
+    if (/[SЮ]/i.test(line)) lat = -Math.abs(lat);
+    if (/[WЗ]/i.test(line)) lng = -Math.abs(lng);
+
+    if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+      [lat, lng] = [lng, lat];
+    }
+
+    if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+      result.push({ lat, lng });
+    }
+  }
+
+  return result;
+}
+
+function toPointFeature(point: MapPoint): GeoJSONFeature {
+  return {
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [point.lng, point.lat] },
+    properties: {},
+  };
+}
+
+/** Стиль точек: круг с чёрной обводкой. */
+function pointPaint(color: string, radius = 5): Record<string, unknown> {
+  return {
+    type: "circle",
+    radius,
+    color,
+    fillOpacity: 0.5,
+    strokeColor: "#000000",
+    weight: 2,
+    fill: true,
+  };
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 //  УТИЛИТЫ: КООРДИНАТЫ И ФОРМАТИРОВАНИЕ
@@ -547,6 +808,34 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   // Сырые объекты базовых слоёв — нужны для передачи в showLayer()
   const baseLayersRef = useRef<BaseLayerEntry[]>([]);
 
+  // ── Инструменты карты ──
+
+  // Активный панельный инструмент (одновременно работает только один)
+  const [activeTool, setActiveTool] = useState<PanelToolId | null>(null);
+  const activeToolRef = useRef<PanelToolId | null>(null);
+
+  // Кнопки-переключатели: нужны, чтобы гасить неактивные при смене инструмента
+  const toolControlsRef = useRef<Partial<Record<PanelToolId, ToggleControlLike>>>(
+    {},
+  );
+
+  // Идёт ли измерение (leaflet-measure): на это время клики не должны открывать сайдбар
+  const measuringRef = useRef(false);
+
+  // Инструменты «выбор из списка»: пункты списка, загрузка, кэш объектов по слою
+  const [selectOptions, setSelectOptions] = useState<SelectOption[]>([]);
+  const [selectLoading, setSelectLoading] = useState(false);
+  const selectLayerIdRef = useRef<number | null>(null);
+  const toolRowsRef = useRef<Record<number, ToolRow[]>>({});
+  const [selectMessage, setSelectMessage] = useState<string | null>(null);
+
+  // Инструмент «добавить по координатам»: id созданных слоёв и счётчик
+  const coordLayerIdsRef = useRef<string[]>([]);
+  const coordCounterRef = useRef(0);
+
+  // Инструмент «координаты по клику»: накопленные точки
+  const [pickedPoints, setPickedPoints] = useState<MapPoint[]>([]);
+
   // ────────────────────────────────────────────────────────────────────────────
   //  ВЫДЕЛЕНИЕ ОБЪЕКТА НА КАРТЕ
   // ────────────────────────────────────────────────────────────────────────────
@@ -782,6 +1071,550 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
+  //  ИНСТРУМЕНТЫ КАРТЫ: ВЫБОР ОБЪЕКТА ИЗ СПИСКА
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Находит ID векторного слоя по названию слоя в веб-карте.
+   * Сначала ищет среди уже подготовленных целей идентификации; если слой
+   * не идентифицируемый — подготавливает его так же, как при инициализации.
+   */
+  async function resolveVectorLayerCandidates(
+    layerName: string,
+  ): Promise<Array<{ source: string; id: number }>> {
+    const norm = (value?: string) => (value ?? "").trim().toLowerCase();
+    const result: Array<{ source: string; id: number }> = [];
+
+    const add = (source: string, id: number) => {
+      if (Number.isFinite(id) && id > 0 && !result.some((c) => c.id === id)) {
+        result.push({ source, id });
+      }
+    };
+
+    // 1) Как в оригинале: дерево веб-карты из SDK — getLayer(<слой веб-карты>).layer.item.children,
+    //    у элемента с нужным display_name берём style_parent_id (ID векторного слоя).
+    const map = mapInstance.current;
+
+    interface SdkTreeItem {
+      display_name?: string;
+      style_parent_id?: number;
+      children?: SdkTreeItem[];
+    }
+
+    const findInTree = (items: SdkTreeItem[]): SdkTreeItem | undefined => {
+      for (const item of items) {
+        if (norm(item.display_name) === norm(layerName) && item.style_parent_id) {
+          return item;
+        }
+        const nested = item.children ? findInTree(item.children) : undefined;
+        if (nested) return nested;
+      }
+      return undefined;
+    };
+
+    // Имени слоя веб-карты (webMapName) в новом коде нет — перебираем слои карты
+    // и берём тот, у которого есть layer.item.children
+    const sdkCandidates = [String(resourceId), ...(map?.getLayers?.() ?? [])];
+
+    for (const candidate of sdkCandidates) {
+      try {
+        const adapter = map?.getLayer?.(candidate) as unknown as
+          | { layer?: { item?: { children?: SdkTreeItem[] } } }
+          | undefined;
+        const children = adapter?.layer?.item?.children;
+
+        if (Array.isArray(children)) {
+          const found = findInTree(children);
+          if (found?.style_parent_id) {
+            add("дерево SDK", Number(found.style_parent_id));
+            break;
+          }
+        }
+      } catch {
+        // слой с таким id недоступен — пробуем следующий
+      }
+    }
+
+    // 2) Цели идентификации (родитель стиля слоя, получен при инициализации карты)
+    const known = identifyTargetsRef.current.find(
+      (t) => norm(t.name) === norm(layerName),
+    );
+    if (known) add("цель идентификации", known.vectorLayerId);
+
+    // 3) Стиль слоя из дерева веб-карты (REST)
+    const layerItems = getLayerItems(webmapChildrenRef.current);
+    const item = layerItems.find((i) => norm(i.display_name) === norm(layerName));
+
+    if (!item) {
+      console.warn(
+        `Слой «${layerName}» не найден в веб-карте. Есть слои:`,
+        layerItems.map((i) => i.display_name),
+      );
+    } else if (!known) {
+      const baseUrl = process.env.NEXT_PUBLIC_NGW_BASE_URL;
+      const styleId = Number(
+        (item as unknown as Record<string, unknown>).layer_style_id,
+      );
+
+      if (baseUrl && Number.isFinite(styleId)) {
+        const [target] = await loadIdentifyTargets(baseUrl, [
+          { mapLayerId: "", styleId, name: layerName },
+        ]);
+
+        if (target) {
+          identifyTargetsRef.current.push(target);
+          add("стиль слоя", target.vectorLayerId);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /** Первый подходящий ID векторного слоя (для экомониторинга). */
+  async function resolveVectorLayerId(layerName: string): Promise<number | null> {
+    const candidates = await resolveVectorLayerCandidates(layerName);
+    return candidates[0]?.id ?? null;
+  }
+
+  /**
+   * Запрашивает объекты слоя NGW через ngw-kit (GeoJSON-фичи: id, geometry, properties).
+   * fields ограничивает набор полей, filters — фильтр вида [поле, оператор, значение].
+   */
+  async function fetchLayerFeatures(
+    layerId: number,
+    options: {
+      fields?: string[];
+      filters?: Array<[string, string, unknown]>;
+    } = {},
+  ): Promise<ToolFeature[]> {
+    const connector = mapInstance.current?.connector;
+    if (!connector) return [];
+
+    const kit = (await import("@nextgis/ngw-kit")) as unknown as {
+      fetchNgwLayerFeatures: (
+        options: Record<string, unknown>,
+      ) => Promise<ToolFeature[]>;
+    };
+
+    return kit.fetchNgwLayerFeatures({
+      connector,
+      resourceId: layerId,
+      ...options,
+    });
+  }
+
+  /**
+   * Таблица атрибутов слоя для списка (id + поля) — тот же запрос, что в прежней версии:
+   * feature_layer.feature.collection. Кэшируется по слою.
+   */
+  async function loadToolRows(layerId: number): Promise<ToolRow[]> {
+    const cached = toolRowsRef.current[layerId];
+    if (cached) return cached;
+
+    const connector = mapInstance.current?.connector;
+    if (!connector) throw new Error("У карты нет connector");
+
+    // Тот же запрос, что в оригинале
+    const response = await connector.get("feature_layer.feature.collection", null, {
+      id: layerId,
+    });
+
+    const rows = (Array.isArray(response) ? response : [])
+      .filter(isRecord)
+      .map((row) => ({
+        id: Number(row.id),
+        fields: isRecord(row.fields) ? row.fields : {},
+      }))
+      .filter((row) => Number.isFinite(row.id));
+
+    toolRowsRef.current[layerId] = rows;
+    return rows;
+  }
+
+  /** Приближает карту к объектам во временном слое zoom_layer (без карточки в сайдбаре). */
+  async function zoomToFeatures(features: GeoJSONFeature[]) {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    handleClearFeature();
+
+    await map.addGeoJsonLayer({
+      data: features,
+      id: "zoom_layer",
+      paint: () => ({ color: "#FF8800", opacity: 0.3, weight: 4 }),
+    });
+    map.fitLayer("zoom_layer", { maxZoom: 14 });
+  }
+
+  /**
+   * Пользователь выбрал пункт в списке: запрашиваем объекты (с геометрией) по id,
+   * затем либо показываем карточку + подсветку + приближение, либо только приближаем.
+   */
+  async function handleSelectToolChange(
+    config: SelectToolConfig,
+    value: string,
+  ) {
+    const layerId = selectLayerIdRef.current;
+    if (layerId === null) return;
+
+    try {
+      const fetched = await fetchLayerFeatures(layerId, {
+        // Как в оригинале: одиночный объект — eq, группа объектов (ЗСО, ОКС) — in
+        filters: config.groupKey
+          ? [["id", "in", value.split(",")]]
+          : [["id", "eq", value]],
+      });
+
+      // Приводим к чистому GeoJSON Feature: геометрия + свойства
+      const features: ToolFeature[] = fetched
+        .filter((feature) => feature?.geometry)
+        .map((feature) => ({
+          type: "Feature",
+          id: feature.id,
+          geometry: feature.geometry,
+          properties: isRecord(feature.properties) ? feature.properties : {},
+        }));
+
+      if (features.length === 0) {
+        console.warn("По выбранному пункту не найдено объектов с геометрией", {
+          layerId,
+          value,
+          fetched,
+        });
+        return;
+      }
+
+      if (config.action === "zoom") {
+        await zoomToFeatures(features);
+        return;
+      }
+
+      const target = identifyTargetsRef.current.find(
+        (t) => t.vectorLayerId === layerId,
+      );
+
+      const items = features.map((feature) =>
+        buildIdentifyItem(feature, target, {
+          id: feature.id,
+          label: config.getLabel(feature.properties),
+          layerId,
+        }),
+      );
+
+      setSelectedFeature({ items, raw: features });
+      setIsSidebarOpen(true);
+      objectsRef.current = items;
+
+      // false → после отрисовки подсветки карта приближается к объектам
+      await setSelected(features, false);
+    } catch (error) {
+      console.error("Не удалось показать выбранный объект:", error);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  //  ИНСТРУМЕНТЫ КАРТЫ: ЭКОЛОГИЧЕСКИЙ МОНИТОРИНГ
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /** Подписи полей слоя: keyname → display_name (REST, как в loadIdentifyTargets). */
+  async function fetchFieldNames(
+    layerId: number,
+  ): Promise<Record<string, string>> {
+    const baseUrl = process.env.NEXT_PUBLIC_NGW_BASE_URL;
+    if (!baseUrl) return {};
+
+    const data = await fetchJson(`${baseUrl}/api/resource/${layerId}`);
+    const fields = isRecord(data.feature_layer) ? data.feature_layer.fields : null;
+    const result: Record<string, string> = {};
+
+    if (Array.isArray(fields)) {
+      for (const field of fields) {
+        if (isRecord(field) && typeof field.keyname === "string") {
+          result[field.keyname] =
+            typeof field.display_name === "string" && field.display_name
+              ? field.display_name
+              : field.keyname;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /** Подсвечивает выбранные точки мониторинга во временном слое light_object и приближает карту. */
+  async function ecomonShowPoints(features: EcomonFeature[], color: string) {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    map.removeLayer("light_object");
+
+    const data = features
+      .filter((feature) => feature.geometry)
+      .map((feature) => ({
+        type: "Feature" as const,
+        geometry: feature.geometry,
+        properties: {},
+      }));
+
+    if (data.length === 0) return;
+
+    await map.addGeoJsonLayer({
+      data,
+      id: "light_object",
+      paint: () => pointPaint(color, 8),
+    });
+    map.fitLayer("light_object", { maxZoom: 12 });
+  }
+
+  const ecomonApi: EcomonApi = {
+    fetchFeatures: fetchLayerFeatures,
+    fetchFieldNames,
+    resolveLayerId: resolveVectorLayerId,
+    showPoints: ecomonShowPoints,
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  //  ИНСТРУМЕНТЫ КАРТЫ: ДОБАВЛЕНИЕ ОБЪЕКТОВ ПО КООРДИНАТАМ
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /** Удаляет с карты все слои, созданные инструментом «по координатам». */
+  function clearCoordLayers() {
+    for (const id of coordLayerIdsRef.current) {
+      mapInstance.current?.removeLayer(id);
+    }
+    coordLayerIdsRef.current = [];
+  }
+
+  /**
+   * Рисует точки / линию / полигон по координатам из текста.
+   * Для линии и полигона дополнительно рисуются вершины (как в прежней версии).
+   * Возвращает текст ошибки или null.
+   */
+  async function handleCoordDraw(
+    kind: "points" | "lines" | "polygons",
+    text: string,
+    color: string,
+  ): Promise<string | null> {
+    const map = mapInstance.current;
+    if (!map) return "Карта ещё не готова";
+
+    const points = parseCoordinates(text);
+    const minPoints = kind === "points" ? 1 : kind === "lines" ? 2 : 3;
+
+    if (points.length < minPoints) {
+      return `Не найдено корректных координат (нужно минимум ${minPoints})`;
+    }
+
+    const coordinates = points.map((p) => [p.lng, p.lat]);
+    const n = ++coordCounterRef.current;
+
+    async function addLayer(
+      suffix: string,
+      data: GeoJSONFeature | GeoJSONFeature[],
+      paint: Record<string, unknown>,
+    ) {
+      const id = `coord_layer_${n}_${suffix}`;
+      await map!.addGeoJsonLayer({ data, id, paint: () => paint });
+      coordLayerIdsRef.current.push(id);
+      return id;
+    }
+
+    let fitId: string;
+
+    if (kind === "lines") {
+      fitId = await addLayer(
+        "line",
+        {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates },
+          properties: {},
+        },
+        { color, weight: 3, opacity: 1 },
+      );
+    } else if (kind === "polygons") {
+      fitId = await addLayer(
+        "polygon",
+        {
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [[...coordinates, coordinates[0]]] },
+          properties: {},
+        },
+        {
+          color,
+          strokeColor: "#000000",
+          fillOpacity: 0.5,
+          weight: 2,
+          fill: true,
+        },
+      );
+    } else {
+      fitId = "";
+    }
+
+    const pointsId = await addLayer(
+      "points",
+      points.map(toPointFeature),
+      pointPaint(color),
+    );
+
+    map.fitLayer(fitId || pointsId, { maxZoom: 16 });
+    return null;
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  //  ИНСТРУМЕНТЫ КАРТЫ: ЭФФЕКТЫ
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // Смена активного инструмента: гасим кнопки остальных (взаимоисключение)
+  useEffect(() => {
+    activeToolRef.current = activeTool;
+
+    for (const [id, control] of Object.entries(toolControlsRef.current)) {
+      if (id !== activeTool) {
+        control?.changeStatus?.(false);
+      }
+    }
+  }, [activeTool]);
+
+  // Инструменты «выбор из списка»: при включении грузим список, при выключении чистим выделение
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    const config = activeTool ? SELECT_TOOLS[activeTool] : undefined;
+    if (!config) return;
+
+    let cancelled = false;
+    setSelectLoading(true);
+    setSelectMessage(null);
+
+    void (async () => {
+      try {
+        const candidates = await resolveVectorLayerCandidates(config.layerName);
+
+        if (cancelled) return;
+
+        if (candidates.length === 0) {
+          setSelectMessage(`Слой «${config.layerName}» не найден в этой веб-карте`);
+          return;
+        }
+
+        // Пробуем ID по очереди, пока NGW не отдаст таблицу атрибутов
+        let rows: ToolRow[] | null = null;
+        let layerId = candidates[0].id;
+        const attempts: string[] = [];
+
+        for (const candidate of candidates) {
+          try {
+            rows = await loadToolRows(candidate.id);
+            layerId = candidate.id;
+            console.info(
+              `Инструмент «${config.layerName}»: слой ${candidate.id} (${candidate.source})`,
+            );
+            break;
+          } catch (error) {
+            console.warn(`Слой ${candidate.id} (${candidate.source}) не подошёл:`, error);
+            attempts.push(`${candidate.source}: ${candidate.id}`);
+          }
+        }
+
+        if (cancelled) return;
+
+        if (!rows) {
+          setSelectMessage(
+            `NGW не отдал таблицу слоя. Пробовали ID — ${attempts.join(", ")}`,
+          );
+          return;
+        }
+
+        selectLayerIdRef.current = layerId;
+
+        const options = buildSelectOptions(config, rows);
+        setSelectOptions(options);
+
+        if (options.length === 0) {
+          console.warn("Пустой список для слоя", config.layerName, { layerId, rows });
+          setSelectMessage("В слое нет объектов или не найдены нужные поля");
+        }
+      } catch (error) {
+        console.error(`Не удалось загрузить слой «${config.layerName}»:`, error);
+        if (!cancelled) {
+          setSelectMessage(
+            `Не удалось загрузить список: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      } finally {
+        if (!cancelled) setSelectLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      selectLayerIdRef.current = null;
+      setSelectOptions([]);
+      setSelectLoading(false);
+      setSelectMessage(null);
+      handleClearFeature();
+    };
+  }, [activeTool]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+
+  // «Экомониторинг»: при выключении инструмента убираем подсветку точек
+  useEffect(() => {
+    if (activeTool !== "ecomonTool") return;
+
+    return () => mapInstance.current?.removeLayer("light_object");
+  }, [activeTool]);
+
+  // «Добавить по координатам»: при выключении инструмента убираем нарисованные слои
+  useEffect(() => {
+    if (activeTool !== "coordTool") return;
+
+    return () => clearCoordLayers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTool]);
+
+  // «Координаты по клику»: отключаем идентификацию, ловим клики, копим точки
+  useEffect(() => {
+    if (activeTool !== "coordFromMapTool") return;
+
+    const map = mapInstance.current;
+    const leafletMap = map?.mapAdapter?.map;
+    if (!map || !leafletMap) return;
+
+    map.disableSelection?.();
+    map.setCursor("crosshair");
+
+    const onPick = (event: LeafletMouseEventLike) => {
+      setPickedPoints((previous) => [...previous, normalizePoint(event.latlng)]);
+    };
+
+    leafletMap.on("click", onPick);
+
+    return () => {
+      leafletMap.off("click", onPick);
+      map.enableSelection?.();
+      map.setCursor("default");
+      setPickedPoints([]);
+    };
+  }, [activeTool]);
+
+  // Отрисовка накопленных точек «координат по клику» на карте
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    map.removeLayer("coord_pick_layer");
+
+    if (pickedPoints.length === 0) return;
+
+    void map.addGeoJsonLayer({
+      data: pickedPoints.map(toPointFeature),
+      id: "coord_pick_layer",
+      paint: () => pointPaint("#ff0000"),
+    });
+  }, [pickedPoints]);
+
+  // ────────────────────────────────────────────────────────────────────────────
   //  ИНИЦИАЛИЗАЦИЯ КАРТЫ (useEffect)
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -812,6 +1645,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     let onClick: ((event: LeafletMouseEventLike) => void) | undefined;
     let onNgwSelect: ((e: unknown) => void) | undefined;
     let onEmitterClick: (() => void) | undefined;
+    let measureControl: unknown;
+    let onMeasureStart: (() => void) | undefined;
+    let onMeasureFinish: (() => void) | undefined;
 
     async function init() {
       // Предотвращаем повторный запуск, если предыдущая инициализация ещё идёт
@@ -878,7 +1714,6 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
         // Ждём полной загрузки карты (тайлы, слои)
         await map.onLoad?.();
-
         if (cancelled) {
           return;
         }
@@ -1076,6 +1911,14 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
         // При клике по карте — запоминаем точку клика и открываем сайдбар
         onClick = (event: LeafletMouseEventLike) => {
+          // Во время измерения и снятия координат клик не должен открывать сайдбар
+          if (
+            measuringRef.current ||
+            activeToolRef.current === "coordFromMapTool"
+          ) {
+            return;
+          }
+
           const point = normalizePoint(event.latlng);
 
           setClickedPoint(point);
@@ -1191,6 +2034,74 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         };
 
         map.emitter?.on?.("ngw:select", onNgwSelect);
+
+        // ──────────────────────────────────────────────────────────────────────
+        //  КНОПКИ ИНСТРУМЕНТОВ (только те, что заданы для этой карты в MAP_TOOLS)
+        // ──────────────────────────────────────────────────────────────────────
+
+        const toolIds = MAP_TOOLS[resourceId] ?? [];
+
+        // Измерения: готовый плагин leaflet-measure, добавляется прямо в Leaflet-карту
+        if (toolIds.includes("measureTool")) {
+          await import("leaflet");
+          await import("leaflet-measure");
+
+          const L = (window as unknown as { L?: LeafletGlobal }).L;
+
+          if (!cancelled && L?.control?.measure) {
+            measureControl = L.control.measure({
+              position: TOOLS_LEAFLET_POSITION,
+              primaryLengthUnit: "kilometers",
+              primaryAreaUnit: "hectares",
+              localization: "ru",
+            });
+            leafletMap.addControl?.(measureControl);
+
+            // На время измерения отключаем идентификацию объектов
+            onMeasureStart = () => {
+              measuringRef.current = true;
+              map.disableSelection?.();
+            };
+            onMeasureFinish = () => {
+              measuringRef.current = false;
+
+              if (activeToolRef.current !== "coordFromMapTool") {
+                map.enableSelection?.();
+              }
+            };
+
+            leafletMap.on("measurestart", onMeasureStart);
+            leafletMap.on("measurefinish", onMeasureFinish);
+          }
+        }
+
+        // Остальные инструменты: кнопки-переключатели NgwMap, панели рисует React
+        for (const toolId of toolIds) {
+          if (toolId === "measureTool") continue;
+
+          const meta = TOOL_META[toolId];
+
+          const control = map.createToggleControl?.({
+            getStatus: () => activeToolRef.current === toolId,
+            onClick: (status) =>
+              setActiveTool((previous) =>
+                status ? toolId : previous === toolId ? null : previous,
+              ),
+            html: meta.icon,
+            title: meta.title,
+            addClassOn: "ngw-tool-on",
+            addClassOff: "ngw-tool-off",
+          });
+
+          if (!control) continue;
+
+          const added = await map.addControl?.(control, TOOLS_NGW_POSITION);
+
+          if (cancelled) return;
+
+          toolControlsRef.current[toolId] =
+            added ?? (control as ToggleControlLike);
+        }
       } catch (error) {
         if (!cancelled) {
           console.error("Ошибка инициализации карты:", error);
@@ -1223,6 +2134,13 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         }
       }
 
+      // Убираем контрол измерений
+      if (leafletMap) {
+        if (onMeasureStart) leafletMap.off("measurestart", onMeasureStart);
+        if (onMeasureFinish) leafletMap.off("measurefinish", onMeasureFinish);
+        if (measureControl) leafletMap.removeControl?.(measureControl);
+      }
+
       const map = mapInstance.current;
 
       // Снимаем слушатели событий NGW emitter
@@ -1246,7 +2164,6 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
       // Уничтожаем экземпляр карты
       map?.remove?.();
       map?.destroy?.();
-
       mapInstance.current = null;
 
       // Очищаем DOM-контейнер
@@ -1257,8 +2174,14 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
       initializingRef.current = false;
       layerStyleIdsRef.current = {};
       baseLayersRef.current = [];
+      toolControlsRef.current = {};
+      toolRowsRef.current = {};
+      coordLayerIdsRef.current = [];
+      measuringRef.current = false;
 
       // Сбрасываем состояние компонента
+      setActiveTool(null);
+      setPickedPoints([]);
       setLoadedLayers([]);
       setBasemaps([]);
       setActiveBasemapId(null);
@@ -1272,6 +2195,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   // ────────────────────────────────────────────────────────────────────────────
   //  РЕНДЕР
   // ────────────────────────────────────────────────────────────────────────────
+
+  // Конфигурация активного инструмента «выбор из списка» (если он активен)
+  const activeSelectTool = activeTool ? SELECT_TOOLS[activeTool] : undefined;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -1305,10 +2231,8 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
       {/* Основная область с картой */}
       <main className="relative min-h-0 flex-1">
-        
         {/* Контейнер карты — заполняет всё доступное пространство */}
         <div ref={mapElement} className="h-full w-full" />
-        
         {/* Строка координат: обновляется напрямую через ref (без re-render) */}
         {/* Позиционируется в правом нижнем углу, отступ зависит от состояния сайдбара */}
         <div
@@ -1319,6 +2243,34 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         >
           —
         </div>
+
+        {/* Панели инструментов (одновременно открыта максимум одна) */}
+        {activeTool && activeSelectTool && (
+          <SelectToolPanel
+            key={activeTool}
+            title={TOOL_META[activeTool].title}
+            placeholder={activeSelectTool.placeholder}
+            options={selectOptions}
+            loading={selectLoading}
+            message={selectMessage}
+            onChange={(value) =>
+              void handleSelectToolChange(activeSelectTool, value)
+            }
+          />
+        )}
+
+        {activeTool === "ecomonTool" && <EcomonPanel api={ecomonApi} />}
+
+        {activeTool === "coordTool" && (
+          <CoordInputPanel onDraw={handleCoordDraw} onClear={clearCoordLayers} />
+        )}
+
+        {activeTool === "coordFromMapTool" && (
+          <CoordPickerPanel
+            points={pickedPoints}
+            onClear={() => setPickedPoints([])}
+          />
+        )}
       </main>
     </div>
   );

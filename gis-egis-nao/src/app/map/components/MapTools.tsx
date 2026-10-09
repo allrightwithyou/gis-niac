@@ -225,6 +225,7 @@ interface MapToolsProps {
  * Комментарии в TOOL_CONFIGS описывают назначение — удалите ненужные,
  * чтобы сократить код.
  */
+
 export default function MapTools({
   ngwMap,
   webMapName,
@@ -233,6 +234,7 @@ export default function MapTools({
   onZoomToObject,
   wrapperRef,
 }: MapToolsProps) {
+  
   // Массив активных контролов для взаимного выключения
   const toolsRef = useRef<ToolControl[]>([]);
   // Ссылки на динамические DOM-элементы (выпадающие списки и окна)

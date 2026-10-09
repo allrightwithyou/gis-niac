@@ -15,7 +15,9 @@
     "@nextgis/ngw-leaflet": "^4.0.0",
     "@nextgis/react-ngw-leaflet": "^4.0.0",
     "leaflet": "^1.9.4",
+    "leaflet-measure": "^3.1.0",
     "next": "16.3.8",
+    "plotly.js-dist-min": "^4.1.2",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

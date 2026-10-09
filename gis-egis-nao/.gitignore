@@ -9,7 +9,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+admnao2026.crt
+admnao2026.key
 # testing
 /coverage
 
