@@ -1,0 +1,23 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Левое здание -->
+  <path d="M6 34 V18 H14 V34" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 22 H12" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M8 26 H12" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M8 30 H12" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Центральное здание (выше) -->
+  <path d="M16 34 V10 H26 V34" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18 14 H24" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M18 18 H24" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M18 22 H24" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M18 26 H24" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M18 30 H24" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Правое здание -->
+  <path d="M28 34 V20 H36 V34" stroke="#62748E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 24 H34" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M30 28 H34" stroke="#62748E" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Земля -->
+  <path d="M4 34 H38" stroke="#62748E" stroke-width="1.8" stroke-linecap="round"/>
+</svg>
