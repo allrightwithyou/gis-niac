@@ -51,14 +51,14 @@ export default function Hero({ webMaps }: HeroProps) {
         </div>
 
         {/* Заголовок */}
-        <div className="pt-[24px] text-[48px]/[60px]">
+        <div className="pt-[24px] text-3xl sm:text-4xl md:text-5xl">
           <h1 className="text-title">Единая геоинформационная</h1>
 
           <h1 className="text-accent">система НАО</h1>
         </div>
 
         {/* Описание */}
-        <div className="max-w-[512px] pt-[16px] pb-[40px] text-balance text-hero text-[16px]/[26px]">
+        <div className="max-w-[512px] pt-[16px] pb-[40px] text-balance text-hero text-sm sm:text-base">
           <span>
             Централизованная платформа пространственных данных Ненецкого
             автономного округа. Мониторинг, анализ и управление геоданными в
@@ -91,7 +91,7 @@ export default function Hero({ webMaps }: HeroProps) {
         </div>
 
         {/* Статистика */}
-        <div className="flex gap-[32px] pt-[32px] border-t mt-[32px] border-margin">
+        <div className="flex gap-[32px] pt-[32px] border-t mt-[32px] text-sm sm:text-base border-margin">
           <div className="text-hero flex flex-col items-start">
             <span className="text-title text-[24px]">{section}</span>
 
