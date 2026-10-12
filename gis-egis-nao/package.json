@@ -14,6 +14,7 @@
     "@nextgis/ngw-connector": "^4.0.0",
     "@nextgis/ngw-leaflet": "^4.0.0",
     "@nextgis/react-ngw-leaflet": "^4.0.0",
+    "isomorphic-dompurify": "^4.5.0",
     "leaflet": "^1.9.4",
     "leaflet-measure": "^3.1.0",
     "next": "16.3.8",

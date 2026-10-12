@@ -97,6 +97,7 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
   const [year, setYear] = useState("");
   const [stat, setStat] = useState<StatData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const layerId = typeKey ? typeLayers[typeKey] : undefined;
 
@@ -131,6 +132,11 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
         setTypeLayers(layers);
       } catch (error) {
         console.error("Экомониторинг: не удалось загрузить справочники:", error);
+        if (!cancelled) {
+          setLoadError(
+            `Не удалось загрузить справочники (${error instanceof Error ? error.message : String(error)}). Проверьте ID ресурсов в EcomonPanel.tsx`,
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -283,6 +289,8 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
       <ToolPanel title="Экологический мониторинг">
         {loading ? (
           <div className="text-gray-500">Загрузка…</div>
+        ) : loadError ? (
+          <div className="text-red-600">{loadError}</div>
         ) : (
           <>
             <select

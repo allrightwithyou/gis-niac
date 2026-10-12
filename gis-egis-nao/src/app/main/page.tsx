@@ -13,7 +13,7 @@ export default async function MainPage() {
 
   return (
     <div className="">
-      <div className="bg-white py-[80px]">
+      <div className="py-[80px]">
         <Hero webMaps={webMaps} />
       </div>
     </div>

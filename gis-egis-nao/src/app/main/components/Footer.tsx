@@ -14,7 +14,6 @@ export default function Footer() {
               height={35}
             />
           </Link>
-          © 2026 Администрация Ненецкого автономного округа
         </div>
         <Link
           href="/main/support"

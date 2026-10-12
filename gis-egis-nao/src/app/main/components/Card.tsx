@@ -92,7 +92,7 @@ export default function Card({ section, webMaps }: CardProps) {
 
       {/* Иконка */}
       <div>
-        <Image className="block" src={img} alt={name} width={40} height={40} />
+        <Image className="block " src={img} alt={name} width={40} height={40} />
       </div>
 
       {/* Название и категория */}

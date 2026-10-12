@@ -13,14 +13,11 @@ type HeroProps = {
 export default function Hero({ webMaps }: HeroProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [search, setText] = useState("");
-  
 
   const section = 12;
   const dataUpdate = "29.09.2026";
   const objectMap = "4500+";
   const layersMap = "200+";
-
-  
 
   const filteredSections = sectionData.filter((section) => {
     const query = search.toLowerCase().trim();
@@ -67,7 +64,7 @@ export default function Hero({ webMaps }: HeroProps) {
         </div>
 
         {/* Поиск */}
-        <div className="shadow-md flex gap-[5px] flex-row w-full max-w-[448px] py-[14px] pl-[44px] pr-[16px] border border-black/[12%] rounded-[12px] text-footer">
+        <div className="shadow-md bg-white flex gap-[5px] flex-row w-full max-w-[448px] py-[14px] pl-[44px] pr-[16px] border border-black/[12%] rounded-[12px] text-footer">
           <Image
             src="/search.svg"
             alt="Поиск"

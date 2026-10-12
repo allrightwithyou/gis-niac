@@ -8,7 +8,7 @@ export default function Header() {
         <div className="gap-[32px] flex w-full">
           <div className="gap-[12px] flex ">
             <Link
-              className="shadow-md p-[2px]  bg-bglogo border-[1.5px] border-accent/30 rounded-[8px] hover:border-accent transition-all"
+              className="shadow-md p-[2px] py-[4px] bg-bglogo border-[1.5px] border-accent/30 rounded-[8px] hover:border-accent transition-all"
               href="https://ниац.рф/"
             >
               <Image

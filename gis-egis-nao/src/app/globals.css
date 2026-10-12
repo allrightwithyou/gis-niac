@@ -15,10 +15,14 @@
   --color-hero: #62748e;
   --color-bgpage: #f0f4f8;
   --color-card: #1d293d;
+  --color-icon:#62748E;
+  --color-dark:#071525;
   --color-margin: rgba(0, 0, 0, 0.12);
   --height-sidebar: calc(100vh - 58px);
 }
-
+.gradient-dark-to-accent {
+  background-image: linear-gradient(to bottom, var(--color-dark), var(--color-accent));
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

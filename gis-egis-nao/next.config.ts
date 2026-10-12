@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-
+  skipTrailingSlashRedirect: true,
   transpilePackages: [
     "@nextgis/ngw-leaflet",
     "@nextgis/leaflet-map-adapter",
@@ -18,14 +18,6 @@ const nextConfig: NextConfig = {
     },
   },
 
-  async rewrites() {
-    return [
-      {
-        source: "/ngw-proxy/:path*",
-        destination: "https://gisnao.adm-nao.ru/ngw/:path*",
-      },
-    ];
-  },
 };
 
 export default nextConfig;
