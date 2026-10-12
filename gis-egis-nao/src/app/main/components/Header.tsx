@@ -4,8 +4,8 @@ import Link from "next/link";
 export default function Header() {
   return (
     <header className="text-sm sm:text-base w-full bg-white/[98%] h-[64px] flex items-center border-b-[1.5px] border-margin">   
-      <div className="px-[24px] flex w-full max-w-[1400px] sm:gap-[32px] mx-auto gap-[15px]">
-        <div className=" sm:gap-[32px] gap-[15px] flex w-full">
+      <div className="px-[24px] flex w-full max-w-[1400px] sm:gap-[32px] mx-auto gap-[10px]">
+        <div className=" sm:gap-[32px] gap-[10px] flex w-full">
           <div className="gap-[12px] flex ">
             <Link
               className="shadow-md p-[2px] py-[4px] bg-bglogo border-[1.5px] border-accent/30 rounded-[8px] hover:border-accent transition-all"
@@ -28,7 +28,7 @@ export default function Header() {
               </Link>
             </div>
           </div>
-          <nav className="text-grey  sm:gap-[24px] gap-[15px] flex flex-1 items-center ">
+          <nav className="text-grey  sm:gap-[24px] gap-[10px] flex flex-1 items-center ">
             <Link
               href="/main/news"
               className="hover:text-accent transition-colors"
