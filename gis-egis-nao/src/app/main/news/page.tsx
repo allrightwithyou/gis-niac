@@ -1,13 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
+//import { readFile } from "node:fs/promises";
 import { parseNewsFile } from "@/app/lib/news";
 import NewsCard from "../components/NewsCard";
 export default async function NewsPage() {
-  const fileContents = await readFile(
-    "C:/Users/rlubchich/Desktop/gisnao.news",
-    "utf8",
-  );
+  //const fileContents = await readFile(
+   // "C:/Users/rlubchich/Desktop/gisnao.news",
+   // "utf8",
+  //);
+   const filePath = path.join(process.cwd(), "gisnao.news");
+  const fileContents = await readFile(filePath, "utf8");
   const news = parseNewsFile(fileContents);
   return (
     <div className="justify-center flex px-[24px] py-[40px]">
