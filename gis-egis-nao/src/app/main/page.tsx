@@ -1,7 +1,7 @@
 import Hero from "@/app/main/components/Hero";
 import { getWebMaps } from "@/app/lib/ngw";
 import type { WebMap } from "@/app/main/components/Card";
-
+export const dynamic = "force-dynamic";
 export default async function MainPage() {
   let webMaps: WebMap[] = [];
 
