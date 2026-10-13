@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Проксирует /ngw-proxy/* на NGW, сохраняя путь как есть (включая «/» в конце)
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const target = process.env.NGW_BASE_URL?.replace(/\/$/, "");
 
   if (!target) {
