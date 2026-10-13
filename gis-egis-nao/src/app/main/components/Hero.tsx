@@ -40,7 +40,7 @@ export default function Hero({ webMaps }: HeroProps) {
           <Image
             className="block"
             src="/compas.svg"
-            alt="Логотип НИАЦ"
+            alt="компас"
             width={12}
             height={12}
           />

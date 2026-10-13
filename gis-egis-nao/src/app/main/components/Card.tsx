@@ -34,7 +34,7 @@ export default function Card({ section, webMaps }: CardProps) {
   // Открытое состояние
   if (isOpen) {
     return (
-      <div className="h-full bg-white p-[20px] min-h-[240px] h-full flex flex-col max-w-[220px] min-w-[170px] border-[1.5px] border-margin rounded-[12px] shadow-xl">
+      <div className="h-full bg-white p-[20px] min-h-[225px] h-full flex flex-col max-w-[230px] min-w-[170px] border-[1.5px] border-margin rounded-[12px] shadow-xl">
         {/* Заголовок */}
         <div className="flex items-start justify-between mb-[16px]">
           <div className="flex flex-col gap-[4px]">
@@ -78,7 +78,7 @@ export default function Card({ section, webMaps }: CardProps) {
     <button
       type="button"
       onClick={() => setIsOpen(true)}
-      className="cursor-pointer h-full shadow-xl group bg-white p-[20px] gap-[16px] flex flex-col items-start max-w-[220px] border-[1.5px] border-margin rounded-[12px] min-h-[240px] min-w-[170px] max-h-[240px] shadow-[1px] hover:[box-shadow:inset_0_-8px_24px_0_var(--shadow-color)] text-left cursor-pointer"
+      className="cursor-pointer h-full shadow-xl group bg-white p-[20px] gap-[16px] flex flex-col items-start max-w-[230px] min-w-[170px] border-[1.5px] border-margin rounded-[12px] min-h-[225px]  max-h-[240px] shadow-[1px] hover:[box-shadow:inset_0_-8px_24px_0_var(--shadow-color)] text-left cursor-pointer"
       style={
         {
           "--shadow-color": shadowColor,
@@ -96,20 +96,19 @@ export default function Card({ section, webMaps }: CardProps) {
       </div>
 
       {/* Название и категория */}
-      <div className="flex flex-col h-[60px] items-start">
+      <div className="flex flex-col h-[80px] w-full items-start">
         <div className="text-left flex-1 text-[14px] text-card ">
           <span>{name}</span>
         </div>
 
-        <div className="text-[11px] text-footer">
+        <div className="text-[12px] flex items-start border-t-[1.5px] pt-[12px] border-black/[12%] w-full text-accent/70">
           <span>{category}</span>
         </div>
       </div>
-
-      {/* Статистика */}
-      <div className="pt-[12px] border-t-[1.5px] border-black/[12%] w-full flex items-start text-[11px] text-accent">
-        <span>{statistic}</span>
-      </div>
     </button>
   );
+  // {/* Статистика */}
+  //<div className="pt-[12px] hidden border-t-[1.5px] border-black/[12%] w-full flex items-start text-[11px] text-accent">
+  //     <span>{statistic}</span>
+  //  </div>
 }
