@@ -42,7 +42,12 @@ export interface EcomonFeature {
 export interface EcomonApi {
   fetchFeatures: (
     layerId: number,
-    options?: { fields?: string[]; filters?: Array<[string, string, unknown]> },
+    options?: {
+      fields?: string[];
+      filters?: Array<[string, string, unknown]>;
+      /** false — без геометрии (для справочников и таблиц показателей) */
+      geom?: boolean;
+    },
   ) => Promise<EcomonFeature[]>;
   /** keyname → display_name полей слоя */
   fetchFieldNames: (layerId: number) => Promise<Record<string, string>>;
@@ -101,6 +106,30 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
 
   const layerId = typeKey ? typeLayers[typeKey] : undefined;
 
+  /**
+   * Все записи выбранной точки (по годам).
+   * Сервер не поддерживает фильтр «like» по полю, поэтому запрашиваем по названию точки (eq),
+   * а совпадение по коду точки («код_год») проверяем на клиенте.
+   */
+  async function fetchPointRecords(
+    id: number,
+    p: TypeKey,
+    code: string,
+    geom: boolean,
+  ): Promise<EcomonFeature[]> {
+    const point = points.find((item) => item.namecode === code);
+    if (!point) return [];
+
+    const features = await api.fetchFeatures(id, {
+      filters: [[`${p}_name`, "eq", point.name]],
+      geom,
+    });
+
+    return features.filter((f) =>
+      String(f.properties[`${p}_namecode`] ?? "").startsWith(`${code}_`),
+    );
+  }
+
   // Начальная загрузка: список территорий и слои типов точек
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +137,7 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
     void (async () => {
       try {
         const [terrFeatures, layerEntries] = await Promise.all([
-          api.fetchFeatures(ECOMON_TERRITORIES_RESOURCE_ID, { fields: ["terr_name"] }),
+          api.fetchFeatures(ECOMON_TERRITORIES_RESOURCE_ID, { geom: false }),
           Promise.all(
             (Object.keys(ECOMON_TYPES) as TypeKey[]).map(
               async (key) => [key, await api.resolveLayerId(ECOMON_TYPES[key].name)] as const,
@@ -158,11 +187,23 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
     void (async () => {
       try {
         const features = await api.fetchFeatures(layerId, {
-          fields: [`${typeKey}_name`, `${typeKey}_namecode`],
+          // Без `fields`: перечисление нескольких полей возвращает пустые атрибуты
           filters: [[`${typeKey}_area`, "eq", territory]],
+          geom: false,
         });
 
         if (cancelled) return;
+
+        if (features.length === 0) {
+          console.warn("Экомониторинг: точек не найдено", { territory, typeKey, layerId });
+        }
+
+        if (features.length > 0 && !(`${typeKey}_name` in features[0].properties)) {
+          console.warn(
+            `Экомониторинг: у объектов слоя нет поля ${typeKey}_name. Есть поля:`,
+            Object.keys(features[0].properties),
+          );
+        }
 
         const unique = new Map<string, { name: string; namecode: string }>();
         for (const f of features) {
@@ -194,12 +235,7 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
 
     void (async () => {
       try {
-        const features = await api.fetchFeatures(layerId, {
-          fields: ["area", "name", "year", "location", "gsh", "msh", "ssh", "gdl", "mdl", "sdl"].map(
-            (s) => `${p}_${s}`,
-          ),
-          filters: [[`${p}_namecode`, "like", `${pointCode}_%`]],
-        });
+        const features = await fetchPointRecords(layerId, p, pointCode, true);
 
         if (cancelled) return;
 
@@ -243,9 +279,9 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
 
     try {
       const [features, names, pdkFeatures, pdkNames] = await Promise.all([
-        api.fetchFeatures(layerId, { filters: [[`${p}_namecode`, "like", `${pointCode}_%`]] }),
+        fetchPointRecords(layerId, p, pointCode, false),
         api.fetchFieldNames(layerId),
-        api.fetchFeatures(pdkId),
+        api.fetchFeatures(pdkId, { geom: false }),
         api.fetchFieldNames(pdkId),
       ]);
 
@@ -351,22 +387,39 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
               ))}
             </select>
 
-            {yearRecords.length > 0 && (
-              <ul className="mb-2 space-y-0.5 text-[12px]">
-                {yearRecords.map((r) => (
-                  <li key={r.year} className="space-y-0.5">
-                    <div>{String(r.area ?? "")}</div>
-                    <div>{r.type}</div>
-                    <div>{String(r.name ?? "")}</div>
-                    <div>{String(r.location ?? "")}</div>
-                    <div>{r.lat}<br />{r.lng}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {typeKey &&
+              yearRecords.map((r) => (
+                <div
+                  key={r.year}
+                  className="mb-3 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+                >
+                  <div
+                    className="flex items-start justify-between gap-2 bg-gray-50 px-3 py-2"
+                    style={{ borderLeft: `4px solid ${ECOMON_TYPES[typeKey].color}` }}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                        {r.type}
+                      </div>
+                      <div className="text-[13px] font-semibold leading-tight">
+                        {String(r.name ?? "")}
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[12px] font-medium shadow-sm ring-1 ring-gray-200">
+                      {r.year}
+                    </span>
+                  </div>
+
+                  <dl className="divide-y divide-gray-100 text-[12px]">
+                    <InfoRow label="Территория" value={String(r.area ?? "")} />
+                    <InfoRow label="Место" value={String(r.location ?? "")} />
+                    <InfoRow label="Координаты" mono value={`${r.lat}\n${r.lng}`} />
+                  </dl>
+                </div>
+              ))}
 
             <button
-              className="w-full rounded border border-gray-300 bg-gray-50 px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
+              className="w-full rounded-md bg-accent px-3 py-2 text-[13px] font-medium text-white shadow-sm transition hover:bg-accent/60 disabled:cursor-not-allowed disabled:bg-gray-300"
               disabled={!pointCode}
               onClick={() => void openStat()}
             >
@@ -383,10 +436,25 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
 
 // ── Окно показателей: таблица ↔ график ───────────────────────────────────────
 
+/** Строка «подпись — значение» в карточке точки; пустые значения не выводятся. */
+function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  if (!value.trim() || value === "undefined") return null;
+
+  return (
+    <div className="grid grid-cols-[88px_1fr] gap-2 px-3 py-1.5">
+      <dt className="text-gray-500">{label}</dt>
+      <dd className={`whitespace-pre-line break-words ${mono ? "font-mono text-[11px]" : ""}`}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
 function StatWindow({ stat, onClose }: { stat: StatData; onClose: () => void }) {
   const [chartKey, setChartKey] = useState<string | null>(null);
 
-  const keys = Object.keys(stat.rows[0] ?? {});
+  // «Год» выводится в шапке таблицы, остальные показатели — строками
+  const indicators = Object.keys(stat.rows[0] ?? {}).filter((key) => key !== "Год");
 
   /** Значение превышает хотя бы один ПДК по этому показателю. */
   const exceedsPdk = (key: string, value: unknown) =>
@@ -402,53 +470,112 @@ function StatWindow({ stat, onClose }: { stat: StatData; onClose: () => void }) 
     );
 
   return (
-    <div className="absolute left-[348px] top-[10px] z-[1000] max-h-[75vh] max-w-[calc(100vw-380px)] overflow-auto rounded bg-white p-3 text-[13px] text-gray-800 shadow">
-      <div className="mb-2 flex items-start justify-between gap-4">
-        <div className="font-semibold">{stat.title}</div>
-        <button onClick={onClose} title="Закрыть" className="text-gray-500 hover:text-gray-800">
+    <div className="absolute left-[348px] top-[10px] z-[1000] flex max-h-[75vh] w-max max-w-[calc(100vw-380px)] flex-col overflow-hidden rounded-lg bg-white text-[13px] text-gray-800 shadow-lg ring-1 ring-black/5">
+      {/* Шапка окна */}
+      <div
+        className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3"
+        style={{ borderTop: `4px solid ${stat.color}` }}
+      >
+        <div>
+          <div className="text-[14px] font-semibold leading-tight">{stat.title}</div>
+          <div className="mt-0.5 text-[11px] text-gray-500">
+            {chartKey === null
+              ? "Нажмите на название показателя, чтобы построить график"
+              : chartKey}
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          title="Закрыть"
+          className="rounded p-1 leading-none text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+        >
           ✕
         </button>
       </div>
 
       {chartKey === null ? (
-        <table className="border-collapse text-[12px]">
-          <tbody>
-            {keys.map((key) => (
-              <tr key={key}>
-                <th className="sticky left-0 border border-gray-200 bg-gray-50 px-2 py-1 text-left font-normal">
-                  {key === "Год" ? (
-                    key
-                  ) : (
-                    <button
-                      title={key}
-                      className="text-left text-blue-700 hover:underline"
-                      onClick={() => setChartKey(key)}
+        <>
+          <div className="overflow-auto">
+            <table className="w-full border-separate border-spacing-0 text-[12px]">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 top-0 z-20 border-b border-gray-200 bg-gray-100 px-3 py-2 text-left font-semibold text-gray-600">
+                    Показатель
+                  </th>
+                  {stat.rows.map((row, i) => (
+                    <th
+                      key={i}
+                      className="sticky top-0 z-10 border-b border-gray-200 bg-gray-100 px-3 py-2 text-right font-semibold tabular-nums text-gray-700"
                     >
-                      {key.length > 20 ? `${key.slice(0, 20)}...` : key}
-                    </button>
-                  )}
-                </th>
-                {stat.rows.map((row, i) => (
-                  <td
-                    key={i}
-                    className={`border border-gray-200 px-2 py-1 text-right ${
-                      exceedsPdk(key, row[key]) ? "bg-red-100 font-semibold text-red-700" : ""
-                    }`}
-                  >
-                    {formatValue(row[key])}
-                  </td>
+                      {String(row["Год"] ?? "")}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {indicators.map((key) => (
+                  <tr key={key} className="group">
+                    <th className="sticky left-0 z-10 border-b border-gray-100 bg-white px-3 py-1.5 text-left font-normal group-even:bg-gray-50 group-hover:bg-accent/10">
+                      <button
+                        title={`${key} — построить график`}
+                        className="flex items-center gap-1.5 text-left text-accent hover:underline"
+                        onClick={() => setChartKey(key)}
+                      >
+                        <span aria-hidden className="text-[11px] opacity-60">📊</span>
+                        {key.length > 20 ? `${key.slice(0, 20)}…` : key}
+                      </button>
+                    </th>
+
+                    {stat.rows.map((row, i) => {
+                      const value = row[key];
+                      const noData = value === -1 || value == null;
+                      const exceeded = exceedsPdk(key, value);
+
+                      return (
+                        <td
+                          key={i}
+                          className="border-b border-gray-100 bg-white px-3 py-1.5 text-right tabular-nums group-even:bg-gray-50 group-hover:bg-accent/10"
+                        >
+                          {noData ? (
+                            <span className="text-gray-300">н/д</span>
+                          ) : exceeded ? (
+                            <span
+                              title="Превышение ПДК"
+                              className="rounded bg-red-100 px-1.5 py-0.5 font-semibold text-red-700"
+                            >
+                              {formatValue(value)}
+                            </span>
+                          ) : (
+                            formatValue(value)
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Легенда */}
+          <div className="flex items-center gap-4 border-t border-gray-200 bg-gray-50 px-4 py-2 text-[11px] text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 rounded bg-red-100 ring-1 ring-red-300" />
+              превышение ПДК
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-gray-300">н/д</span>
+              нет данных
+            </span>
+          </div>
+        </>
       ) : (
-        <div>
+        <div className="overflow-auto p-4">
           <button
-            className="mb-2 text-blue-700 hover:underline"
+            className="mb-3 rounded-full bg-gray-100 px-3 py-1 text-[12px] text-gray-700 hover:bg-gray-200"
             onClick={() => setChartKey(null)}
           >
-            ← Вернуться к таблице
+            ← К таблице
           </button>
           <EcomonChart stat={stat} chartKey={chartKey} />
         </div>

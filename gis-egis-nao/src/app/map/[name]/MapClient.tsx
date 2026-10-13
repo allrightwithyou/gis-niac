@@ -293,51 +293,66 @@ interface SelectToolConfig {
   /** display_name слоя в дереве веб-карты */
   layerName: string;
   placeholder: string;
-  /** Поля, нужные для списка (запрашиваются без геометрии — слои могут быть тяжёлыми) */
-  listFields: string[];
   getLabel: (props: Record<string, unknown>) => string;
+  /** Объекты без данных (например, без номера распоряжения) — их пункт идёт в конце списка */
+  isEmpty?: (props: Record<string, unknown>) => boolean;
   /** Объекты с одинаковым ключом попадают в один пункт списка (и сортируются по нему) */
   groupKey?: (props: Record<string, unknown>) => string;
   /** identify — показать карточку в сайдбаре и подсветить; zoom — только приблизить */
   action: "identify" | "zoom";
 }
 
-/** «дд.мм.гггг» → «гггг/мм/дд» (для сортировки по дате). */
-function toSortableDate(value: unknown): string {
-  const [day, month, year] = String(value ?? "").split(".");
-  return year && month && day ? `${year}/${month}/${day}` : String(value ?? "");
+/**
+ * Дата распоряжения → подпись «дд.мм.гггг» и ключ сортировки «гггг/мм/дд».
+ * Понимает «дд.мм.гггг» (как в оригинале), ISO «гггг-мм-дд» и объект {year, month, day}.
+ */
+function parseOrderDate(value: unknown): { display: string; sortable: string } {
+  if (isRecord(value) && value.year && value.month && value.day) {
+    const d = String(value.day).padStart(2, "0");
+    const m = String(value.month).padStart(2, "0");
+    return { display: `${d}.${m}.${value.year}`, sortable: `${value.year}/${m}/${d}` };
+  }
+
+  const text = String(value ?? "");
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (iso) {
+    return { display: `${iso[3]}.${iso[2]}.${iso[1]}`, sortable: `${iso[1]}/${iso[2]}/${iso[3]}` };
+  }
+
+  const [day, month, year] = text.split(".");
+  return year && month && day
+    ? { display: text, sortable: `${year}/${month}/${day}` }
+    : { display: text, sortable: text };
 }
 
 const SELECT_TOOLS: Partial<Record<PanelToolId, SelectToolConfig>> = {
   fishTool: {
     layerName: "Рыболовные участки",
     placeholder: "Выберите участок",
-    listFields: ["name"],
     getLabel: (p) => String(p.name ?? ""),
     action: "identify",
   },
   settlTool: {
     layerName: "Населённые пункты",
     placeholder: "Выберите нас.пункт",
-    listFields: ["Name"],
     getLabel: (p) => String(p.Name ?? ""),
     action: "zoom",
   },
   zsoTool: {
     layerName: "Зоны санитарной охраны",
     placeholder: "Выберите распоряж.",
-    listFields: ["order_date", "order_number"],
     getLabel: (p) =>
-      p.order_number !== "-"
-        ? `№ ${p.order_number} от ${p.order_date}`
+      p.order_number && p.order_number !== "-"
+        ? `№ ${p.order_number} от ${parseOrderDate(p.order_date).display}`
         : "Отсутствуют данные",
-    groupKey: (p) => `${toSortableDate(p.order_date)}${p.order_number}`,
+    groupKey: (p) => `${parseOrderDate(p.order_date).sortable}${p.order_number}`,
+    isEmpty: (p) => !p.order_number || p.order_number === "-",
     action: "identify",
   },
   ccfTool: {
     layerName: "Объекты капитального строительства",
     placeholder: "Выберите объект",
-    listFields: ["Name"],
     getLabel: (p) => String(p.Name ?? ""),
     groupKey: (p) => String(p.Name ?? ""),
     action: "identify",
@@ -351,7 +366,7 @@ function buildSelectOptions(
 ): SelectOption[] {
   const groups = new Map<
     string,
-    { label: string; sortKey: string; ids: number[] }
+    { label: string; sortKey: string; empty: boolean; ids: number[] }
   >();
 
   for (const row of rows) {
@@ -366,13 +381,18 @@ function buildSelectOptions(
       groups.set(key, {
         label,
         sortKey: config.groupKey ? key : label,
+        empty: config.isEmpty?.(props) ?? false,
         ids: [row.id],
       });
     }
   }
 
   return [...groups.values()]
-    .sort((a, b) => a.sortKey.localeCompare(b.sortKey, "ru"))
+    .sort(
+      (a, b) =>
+        Number(a.empty) - Number(b.empty) ||
+        a.sortKey.localeCompare(b.sortKey, "ru"),
+    )
     .map((group) => ({ value: group.ids.join(","), label: group.label }));
 }
 
@@ -821,9 +841,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   const activeToolRef = useRef<PanelToolId | null>(null);
 
   // Кнопки-переключатели: нужны, чтобы гасить неактивные при смене инструмента
-  const toolControlsRef = useRef<
-    Partial<Record<PanelToolId, ToggleControlLike>>
-  >({});
+  const toolControlsRef = useRef<Partial<Record<PanelToolId, ToggleControlLike>>>(
+    {},
+  );
 
   // Идёт ли измерение (leaflet-measure): на это время клики не должны открывать сайдбар
   const measuringRef = useRef(false);
@@ -1109,10 +1129,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
     const findInTree = (items: SdkTreeItem[]): SdkTreeItem | undefined => {
       for (const item of items) {
-        if (
-          norm(item.display_name) === norm(layerName) &&
-          item.style_parent_id
-        ) {
+        if (norm(item.display_name) === norm(layerName) && item.style_parent_id) {
           return item;
         }
         const nested = item.children ? findInTree(item.children) : undefined;
@@ -1152,9 +1169,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
     // 3) Стиль слоя из дерева веб-карты (REST)
     const layerItems = getLayerItems(webmapChildrenRef.current);
-    const item = layerItems.find(
-      (i) => norm(i.display_name) === norm(layerName),
-    );
+    const item = layerItems.find((i) => norm(i.display_name) === norm(layerName));
 
     if (!item) {
       console.warn(
@@ -1183,9 +1198,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   }
 
   /** Первый подходящий ID векторного слоя (для экомониторинга). */
-  async function resolveVectorLayerId(
-    layerName: string,
-  ): Promise<number | null> {
+  async function resolveVectorLayerId(layerName: string): Promise<number | null> {
     const candidates = await resolveVectorLayerCandidates(layerName);
     return candidates[0]?.id ?? null;
   }
@@ -1193,8 +1206,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   /** Диагностика средствами SDK: есть ли ресурс с таким ID и чем он является. */
   async function describeResource(resourceId: number): Promise<string> {
     try {
-      const info =
-        await mapInstance.current?.connector?.getResource(resourceId);
+      const info = await mapInstance.current?.connector?.getResource(resourceId);
       const resource =
         isRecord(info) && isRecord(info.resource) ? info.resource : undefined;
 
@@ -1215,6 +1227,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     options: {
       fields?: string[];
       filters?: Array<[string, string, unknown]>;
+      geom?: boolean;
     } = {},
   ): Promise<ToolFeature[]> {
     const connector = mapInstance.current?.connector;
@@ -1224,16 +1237,36 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
       fetchNgwLayerFeatures: (
         options: Record<string, unknown>,
       ) => Promise<ToolFeature[]>;
+      fetchNgwLayerItems: (
+        options: Record<string, unknown>,
+      ) => Promise<
+        Array<{ id?: number; geom?: unknown; fields?: Record<string, unknown> }>
+      >;
     };
 
+    const request = { connector, resourceId: layerId, ...options };
+
     try {
-      return await kit.fetchNgwLayerFeatures({
-        connector,
-        resourceId: layerId,
-        ...options,
-      });
-    } catch (error) {
-      console.error(`fetchNgwLayerFeatures(${layerId}) не сработал:`, error);
+      return await kit.fetchNgwLayerFeatures(request);
+    } catch (featuresError) {
+      console.warn(
+        `fetchNgwLayerFeatures(${layerId}) не сработал, пробуем fetchNgwLayerItems:`,
+        featuresError,
+      );
+    }
+
+    try {
+      // Тот же запрос на уровне элементов NGW; приводим к GeoJSON-подобным объектам
+      const items = await kit.fetchNgwLayerItems(request);
+
+      return items.map((item) => ({
+        type: "Feature" as const,
+        id: item.id,
+        geometry: item.geom,
+        properties: isRecord(item.fields) ? item.fields : {},
+      })) as ToolFeature[];
+    } catch (itemsError) {
+      console.error(`fetchNgwLayerItems(${layerId}) не сработал:`, itemsError);
       throw new Error(`ресурс ${layerId}: ${await describeResource(layerId)}`);
     }
   }
@@ -1242,10 +1275,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
    * Таблица атрибутов слоя для списка (id + поля) — тот же запрос, что в прежней версии:
    * feature_layer.feature.collection. Кэшируется по слою.
    */
-  async function loadToolRows(
-    layerId: number,
-    fields: string[],
-  ): Promise<ToolRow[]> {
+  async function loadToolRows(layerId: number): Promise<ToolRow[]> {
     const cached = toolRowsRef.current[layerId];
     if (cached) return cached;
 
@@ -1258,19 +1288,17 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         connector: unknown;
         resourceId: number;
         geom: boolean;
-        fields: string[];
       }) => Promise<Array<{ id?: number; fields?: Record<string, unknown> }>>;
     };
 
     let items: Array<{ id?: number; fields?: Record<string, unknown> }>;
 
     try {
-      // Для списка нужны только атрибуты: geom: false и перечень полей (опции SDK)
+      // Для списка нужны только атрибуты: geom: false (опция SDK) — геометрия подгрузится при выборе
       items = await kit.fetchNgwLayerItems({
         connector,
         resourceId: layerId,
         geom: false,
-        fields,
       });
     } catch (error) {
       const hint = await describeResource(layerId);
@@ -1383,9 +1411,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     if (!baseUrl) return {};
 
     const data = await fetchJson(`${baseUrl}/api/resource/${layerId}`);
-    const fields = isRecord(data.feature_layer)
-      ? data.feature_layer.fields
-      : null;
+    const fields = isRecord(data.feature_layer) ? data.feature_layer.fields : null;
     const result: Record<string, string> = {};
 
     if (Array.isArray(fields)) {
@@ -1497,10 +1523,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         "polygon",
         {
           type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates: [[...coordinates, coordinates[0]]],
-          },
+          geometry: { type: "Polygon", coordinates: [[...coordinates, coordinates[0]]] },
           properties: {},
         },
         {
@@ -1557,9 +1580,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         if (cancelled) return;
 
         if (candidates.length === 0) {
-          setSelectMessage(
-            `Слой «${config.layerName}» не найден в этой веб-карте`,
-          );
+          setSelectMessage(`Слой «${config.layerName}» не найден в этой веб-карте`);
           return;
         }
 
@@ -1570,17 +1591,14 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
         for (const candidate of candidates) {
           try {
-            rows = await loadToolRows(candidate.id, config.listFields);
+            rows = await loadToolRows(candidate.id);
             layerId = candidate.id;
             console.info(
               `Инструмент «${config.layerName}»: слой ${candidate.id} (${candidate.source})`,
             );
             break;
           } catch (error) {
-            console.warn(
-              `Слой ${candidate.id} (${candidate.source}) не подошёл:`,
-              error,
-            );
+            console.warn(`Слой ${candidate.id} (${candidate.source}) не подошёл:`, error);
             attempts.push(
               `${candidate.source}: ${error instanceof Error ? error.message : String(error)}`,
             );
@@ -1598,21 +1616,18 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
         selectLayerIdRef.current = layerId;
 
+        // Для диагностики: реальные имена полей слоя (если подписи в списке «пустые»)
+        console.info(`Поля слоя «${config.layerName}»:`, Object.keys(rows[0]?.fields ?? {}));
+
         const options = buildSelectOptions(config, rows);
         setSelectOptions(options);
 
         if (options.length === 0) {
-          console.warn("Пустой список для слоя", config.layerName, {
-            layerId,
-            rows,
-          });
+          console.warn("Пустой список для слоя", config.layerName, { layerId, rows });
           setSelectMessage("В слое нет объектов или не найдены нужные поля");
         }
       } catch (error) {
-        console.error(
-          `Не удалось загрузить слой «${config.layerName}»:`,
-          error,
-        );
+        console.error(`Не удалось загрузить слой «${config.layerName}»:`, error);
         if (!cancelled) {
           setSelectMessage(
             `Не удалось загрузить список: ${error instanceof Error ? error.message : String(error)}`,
@@ -1661,10 +1676,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     map.setCursor("crosshair");
 
     const onPick = (event: LeafletMouseEventLike) => {
-      setPickedPoints((previous) => [
-        ...previous,
-        normalizePoint(event.latlng),
-      ]);
+      setPickedPoints((previous) => [...previous, normalizePoint(event.latlng)]);
     };
 
     leafletMap.on("click", onPick);
@@ -2341,10 +2353,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         {activeTool === "ecomonTool" && <EcomonPanel api={ecomonApi} />}
 
         {activeTool === "coordTool" && (
-          <CoordInputPanel
-            onDraw={handleCoordDraw}
-            onClear={clearCoordLayers}
-          />
+          <CoordInputPanel onDraw={handleCoordDraw} onClear={clearCoordLayers} />
         )}
 
         {activeTool === "coordFromMapTool" && (
