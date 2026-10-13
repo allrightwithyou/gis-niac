@@ -24,7 +24,7 @@ export default function Header({ section, onToggleSidebar }: HeaderProps) {
 
   return (
     <div className="h-[58px] px-[16px] bg-white flex flex-row items-center justify-between border-b border-gray-200 z-20 relative">
-      <div className="flex gap-[12px] flex-row justify-center items-center">
+      <div className="flex gap-[8px] sm:gap-[12px] flex-row justify-center items-center">
         <Link
           href="/main"
           className="flex gap-[6px] pr-[12px] flex-row justify-center items-center border-r-[1px] border-margin"
@@ -51,10 +51,14 @@ export default function Header({ section, onToggleSidebar }: HeaderProps) {
         </div>
 
         <div className="flex flex-col">
-          <span className="text-title text-[16px]">{section.name}</span>
-          <span className="text-hero text-[12px]">{section.category}</span>
+          <span className="text-title text-[12px] sm:text-[16px]">
+            {section.name}
+          </span>
+          <span className="text-hero text-[10px] sm:text-[12px]">
+            {section.category}
+          </span>
         </div>
-        <div className="flex justify-center shadow items-center h-[23px] px-[8px] py-[2px] uppercase text-accent text-[12px]  rounded-full py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
+        <div className="flex justify-center shadow items-center h-[23px] uppercase text-accent text-[12px]  rounded-full py-[4px] px-[6px] sm:px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
           <span>{section.shortName}</span>
         </div>
       </div>
