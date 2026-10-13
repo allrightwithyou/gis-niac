@@ -1,7 +1,31 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+type FaqItem = {
+  question: string;
+  answer: string;
+};
 
 export default function HelpPage() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const faqItems: FaqItem[] = [
+    {
+      question: "Почему слой не отображается?",
+      answer:
+        "Проверьте, включён ли слой в панели слоёв и соответствует ли текущий масштаб отображению слоя.",
+    },
+    {
+      question: "Как часто обновляются данные?",
+      answer:
+        "Данные обновляются по мере появления новых материалов и изменений в геоинформационных системах.",
+    },
+    {
+      question: "Что делать, если нет нужной карты?",
+      answer:
+        "Обратитесь в поддержку или воспользуйтесь поиском по доступным картам.",
+    },
+  ];
   return (
     <div className="justify-center flex px-[24px] py-[40px]">
       <div className="max-w-[1400px] w-full flex flex-col gap-[34px]">
@@ -52,7 +76,7 @@ export default function HelpPage() {
             <span className="text-footer text-[12px] sm:text-base">
               В боковой панели включайте и отключайте слои. Активные наборы
               данных сразу появятся на карте. Справа от кнопки слоя можно
-              раскрыть нажатием на «+» условные обозначения.
+              раскрыть условные обозначения нажатием на «+».
             </span>
           </div>
           <div className="shadow-md flex flex-col p-[20px] bg-white  border-[1px] border-grey/20 gap-[5px] rounded-[12px]">
@@ -68,19 +92,47 @@ export default function HelpPage() {
         </div>
 
         <div className="flex flex-col gap-[15px]">
-          <h2 className="text-title text-[16px] sm:text-[22px]">
-            Частые вопросы
-          </h2>
           <div className="flex flex-col gap-[10px]">
-            <button className="shadow-md border-[1px] p-[15px] w-full rounded-[15px] text-[14px] sm:text-base bg-white border-grey/20 flex">
-              <span>Почему слой не отображается?</span>
-            </button>
-            <button className="shadow-md border-[1px] p-[15px] w-full rounded-[15px] text-[14px] sm:text-base bg-white border-grey/20 flex">
-              <span>Как часто обновляются данные?</span>
-            </button>
-            <button className="shadow-md border-[1px] p-[15px] w-full rounded-[15px] text-[14px] sm:text-base bg-white border-grey/20 flex">
-              <span>Что делать, если нет нужной карты?</span>
-            </button>
+            {faqItems.map((item, index) => {
+              const isOpen = openIndex === index;
+
+              return (
+                <div
+                  key={item.question}
+                  className="shadow-md border-[1px] border-grey/20 bg-white rounded-[15px] w-full"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                    aria-expanded={isOpen}
+                    className="p-[15px] w-full text-[14px] sm:text-base flex justify-between items-center"
+                  >
+                    <span>{item.question}</span>
+                    <span
+                      className={`transition-transform duration-300 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    >
+                      ▾
+                    </span>
+                  </button>
+
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                      isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-[15px] pb-[15px]">
+                        <span className="text-[14px] sm:text-base text-footer">
+                          {item.answer}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <div className="shadow-md w-full flex flex-col gap-[8px] rounded-[15px] p-[15px] bg-accent">
             <span className="text-white">Не нашли ответ?</span>
