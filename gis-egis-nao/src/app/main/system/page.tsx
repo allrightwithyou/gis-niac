@@ -30,7 +30,9 @@ export default function SystemPage() {
           </span>
         </div>
         <div className="flex flex-col gap-[15px]">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl">О системе</h1>
+          <h1 className="text-3xl text-title sm:text-4xl md:text-5xl">
+            О системе
+          </h1>
           <p className="text-balance text-hero text-sm sm:text-base">
             Единое цифровое пространство для хранения, анализа и публикации
             геоданных Ненецкого автономного округа.
@@ -104,9 +106,12 @@ export default function SystemPage() {
                 <span>02</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-title text-[16px]">Аналитика территорий</span>
+                <span className="text-title text-[16px]">
+                  Аналитика территорий
+                </span>
                 <span className="text-hero text-[12px]">
-                  Сопоставление тематических слоев для принятия обоснованных управленческих решений.
+                  Сопоставление тематических слоев для принятия обоснованных
+                  управленческих решений.
                 </span>
               </div>
             </div>
@@ -117,7 +122,8 @@ export default function SystemPage() {
               <div className="flex flex-col">
                 <span className="text-title text-[16px]">Открытые данные</span>
                 <span className="text-hero text-[12px]">
-                  Публикация доступных сведений для жителей, бизнеса, исследователей и проектных организаций.
+                  Публикация доступных сведений для жителей, бизнеса,
+                  исследователей и проектных организаций.
                 </span>
               </div>
             </div>
@@ -126,9 +132,12 @@ export default function SystemPage() {
                 <span>04</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-title text-[16px]">Межведомственный обмен</span>
+                <span className="text-title text-[16px]">
+                  Межведомственный обмен
+                </span>
                 <span className="text-hero text-[12px]">
-                  Актуальные сведения без дублирования запросов и разрозненных файловых архивов.
+                  Актуальные сведения без дублирования запросов и разрозненных
+                  файловых архивов.
                 </span>
               </div>
             </div>

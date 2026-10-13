@@ -90,32 +90,48 @@ export default function Hero({ webMaps }: HeroProps) {
         {/* Статистика */}
         <div className="flex gap-[32px] pt-[32px] border-t mt-[32px] text-sm sm:text-base border-margin">
           <div className="text-hero flex flex-col items-start">
-            <span className="text-title text-[18px] sm:text-[24px]">{section}</span>
+            <span className="text-title text-[18px] sm:text-[24px]">
+              {section}
+            </span>
 
-            <span className="text-footer text-[10px] sm:text-[12px]">Разделов</span>
+            <span className="text-footer text-[10px] sm:text-[12px]">
+              Разделов
+            </span>
           </div>
 
           <div className="text-hero flex flex-col items-start">
-            <span className="text-title text-[18px] sm:text-[24px] ">{objectMap}</span>
+            <span className="text-title text-[18px] sm:text-[24px] ">
+              {objectMap}
+            </span>
 
-            <span className="text-footer text-[10px] sm:text-[12px]">Объектов</span>
+            <span className="text-footer text-[10px] sm:text-[12px]">
+              Объектов
+            </span>
           </div>
 
           <div className="text-hero flex flex-col items-start">
-            <span className="text-title text-[18px] sm:text-[24px]">{layersMap}</span>
+            <span className="text-title text-[18px] sm:text-[24px]">
+              {layersMap}
+            </span>
 
-            <span className="text-footer text-[10px] sm:text-[12px]">Слоёв данных</span>
+            <span className="text-footer text-[10px] sm:text-[12px]">
+              Слоёв данных
+            </span>
           </div>
 
           <div className="pb-[64px] text-hero flex flex-col items-start">
-            <span className="text-title text-[18px] sm:text-[24px]">{dataUpdate}</span>
+            <span className="text-title text-[18px] sm:text-[24px]">
+              {dataUpdate}
+            </span>
 
-            <span className="text-footer text-[10px] sm:text-[12px]">Обновлено</span>
+            <span className="text-footer text-[10px] sm:text-[12px]">
+              Обновлено
+            </span>
           </div>
         </div>
 
         {/* Карточки */}
-        <div className="pt-[64px]">
+        <div>
           <Cards cards={filteredSections} webMaps={webMaps} />
         </div>
       </div>
