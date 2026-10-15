@@ -247,6 +247,7 @@ function PhotoGallery({ photos }: { photos: Photo[] }) {
         visible[openIndex] &&
         createPortal(
           <div
+            data-photo-viewer="portal"
             className="fixed inset-0 flex items-center justify-center bg-black/80 p-4"
             // Максимальный z-index инлайном (не классом Tailwind): окно должно быть выше
             // панелей инструментов и кнопок Leaflet при любых настройках сборки стилей
