@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import ButtonSidebar from "./ButtonSidebar";
+import IdentifyMedia, {
+  IdentifyFieldValue,
+  isMediaValue,
+} from "./IdentifyMedia";
 import type { Layer, IdentifyResult } from "../[name]/MapClient";
 
 export interface LegendItem {
@@ -112,6 +116,11 @@ export default function Sidebar({
         continue;
       }
 
+      // Фото (bgstorage) и камера (camid:N) показываются в <IdentifyMedia>, а не текстом
+      if (isMediaValue(value)) {
+        continue;
+      }
+
       fields.push({
         key,
         value:
@@ -130,6 +139,9 @@ export default function Sidebar({
       layerName: item.layerName,
       name,
       fields,
+      item,
+      // «Сырые» свойства нужны для ссылок на панораму (nodes, name)
+      rawProperties: item.feature?.properties,
     };
   });
 
@@ -201,12 +213,18 @@ export default function Sidebar({
                         {field.key}
                       </span>
                       <span className="text-gray-900 font-medium text-right break-words">
-                        {field.value}
+                        <IdentifyFieldValue
+                          value={field.value}
+                          properties={card.rawProperties}
+                        />
                       </span>
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* Фото из bgstorage (одно или несколько) и онлайн-камера */}
+              <IdentifyMedia item={card.item} />
             </div>
           ))}
         </div>

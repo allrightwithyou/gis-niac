@@ -17,9 +17,18 @@ interface PanelPoint {
   lng: number;
 }
 
-export function ToolPanel({ title, children }: { title: string; children: ReactNode }) {
+export function ToolPanel({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="absolute left-[56px] top-[10px] z-[1000] w-[280px] rounded bg-white p-3 text-[13px] text-gray-800 shadow">
+    <div
+      data-map-overlay=""
+      className="absolute left-[56px] top-[10px] z-[1000] w-[280px] rounded bg-white p-3 text-[13px] text-gray-800 shadow"
+    >
       <div className="mb-2 font-semibold">{title}</div>
       {children}
     </div>
@@ -104,7 +113,9 @@ export function CoordInputPanel({
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={"По одной точке в строке:\n69.0417 33.0833\n69°02′30″ 33°05′00″"}
+        placeholder={
+          "По одной точке в строке:\n69.0417 33.0833\n69°02′30″ 33°05′00″"
+        }
         rows={6}
         className="mb-2 w-full rounded border border-gray-300 p-2 font-mono text-[12px]"
       />

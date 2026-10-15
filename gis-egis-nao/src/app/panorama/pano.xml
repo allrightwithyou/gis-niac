@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tour apprev="15969" appversion="5.2.0" start="node1">
+  <panorama id="node1">
+    <input leveltileurl="tiles/node1/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="68">
+      <start pan="-1.57" tilt="0" fov="68.3" projection="4"/>
+      <flyin pan="-21.23" tilt="-78.56" fov="222.2" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="21.07.2018" comment="" latitude="67.63944593" description="Обелиск Победы — памятник в Нарьян-Маре, на улице Победы, рядом со зданием главпочтамта в честь павших в годы Великой Отечественной войны жителей Ненецкого округа." author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Обелиск Победы" longitude="53.00721735" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="-7.64" tilt="1.57" description="" id="Point01" skinid="ht_node" title="Участникам локальных войн и конфликтов" url="{node3}" target=""/>
+      <hotspot pan="-114.15" tilt="3.28" description="" id="Point02" skinid="ht_node" title="Площадь Ленина" url="{node2}" target=""/>
+      <hotspot pan="-84" tilt="45.63" description="" id="Point03" skinid="ht_image" title="Фото - Главпочтамт" url="images/DSCF8604.jpg" target=""/>
+      <hotspot pan="-164.2" tilt="20.97" description="" id="Point04" skinid="ht_image" title="Фото - Администрация НАО" url="images/IMG_7990_Panorama.jpg" target=""/>
+      <hotspot pan="114.67" tilt="18.77" description="" id="Point05" skinid="ht_image" title="Фото - ДК &quot;Арктика&quot;" url="images/DSCF8591-2.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node2">
+    <input leveltileurl="tiles/node2/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="157">
+      <start pan="130.74" tilt="0" fov="82" projection="4"/>
+      <flyin pan="104.83" tilt="-88.68" fov="215.2" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="23.07.2018" comment="" latitude="67.63809080" description="На площади располагается здание администрации г. Нарьян-Мара а так же открывается вид на Богоявленский собор " author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Площадь Ленина" longitude="53.00687134" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="146.8" tilt="0.86" description="" id="Point01" skinid="ht_node" title="Обелиск победы" url="{node1}" target=""/>
+      <hotspot pan="91.15" tilt="0.8" description="" id="Point02" skinid="ht_node" title="Богоявленская церковь" url="{node5}" target=""/>
+      <hotspot pan="82.35" tilt="16.52" description="" id="Point03" skinid="ht_image" title="Фото - Богоявленский собор" url="images/IMG_2073.jpg" target=""/>
+      <hotspot pan="48.61" tilt="5.77" description="" id="Point04" skinid="ht_image" title="Фото - Памятник Яку-7Б" url="images/IMG_3141.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node3">
+    <input leveltileurl="tiles/node3/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="-0.27468" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="-0.728622">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="-204">
+      <start pan="-88.31" tilt="-0.02" fov="90.4" projection="4"/>
+      <flyin pan="-70.65" tilt="-90" fov="251.8" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="04.08.2018" comment="" latitude="67.63995001" description="При проектировании и установке памятника в Нарьян-Маре в 2009 году термин «ветераны боевых действий» не был закреплен законодательно. Только в июне 2015 года  монумент переименовали; теперь он называется «Ветеранам боевых действий, участникам локальных войн и вооруженных конфликтов». Автор монумента — скульптор Игорь Николаевич Чумаков." author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Участникам локальных войн и конфликтов" longitude="53.01017046" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="-74.52" tilt="-0.13" description="" id="Point01" skinid="ht_node" title="Обелиск Победы" url="{node1}" target=""/>
+      <hotspot pan="83.48" tilt="-0.22" description="" id="Point02" skinid="ht_node" title="Подвигу участников оленно-транспортных батальонов" url="{node4}" target=""/>
+      <hotspot pan="140.83" tilt="1.3" description="" id="Point03" skinid="ht_node" title="Экспозиция &quot;Под стук копыт белого оленя&quot;" url="{node7}" target=""/>
+      <hotspot pan="135.43" tilt="1.29" description="" id="Point04" skinid="ht_node" title="Экспозиция &quot;Детсво, опаленное войной&quot;" url="{node10}" target=""/>
+      <hotspot pan="137.23" tilt="22.51" description="" id="Point05" skinid="ht_image" title="Фото - Ненецкий краеведческий музей" url="images/IMG_1979.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node4">
+    <input leveltileurl="tiles/node4/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="-137">
+      <start pan="-24.19" tilt="0.15" fov="85.6" projection="4"/>
+      <flyin pan="-3.65" tilt="-90" fov="251.8" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="23.07.2018" comment="" latitude="67.64011327" description="Памятник подвигу участников оленно-транспортных батальонов в годы Великой Отечественной войны-воздвигнут в феврале 2012 года в память о жителях округа, которые в годы Великой Отечественной войны сформировали несколько оленно-транспортных батальонов, общей численностью более 600 человек, и более 7000 голов ездовых оленей.&#xa;&#xa;В Великой Отечественной войне было задействовано около 10 тысяч оленей, при этом в живых осталось около тысячи. В начале 1942 года из Ненецкого округа на Карельский фронт было отправлено 6 тысяч оленей в сопровождении нескольких сот оленеводов, из которых было сформировано пять оленно-транспортных эшелонов. Важнейшими задачами являлись санитарная эвакуация раненых с полей сражений, доставка грузов, оружия и снарядов. Всего с помощью оленей с линии фронта и из глубокого тыла противника было вывезено 10142 раненых солдата. Оленные батальоны перевезли к переднему краю 8 тысяч бойцов и 17 тысяч тонн боеприпасов. Для оленей война завершилась в 1944 году после масштабной операции по освобождению Карелии и Мурманской области." author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Подвигу участников оленно-транспортных батальонов" longitude="53.01130772" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="-35.95" tilt="-0.2" description="" id="Point01" skinid="ht_node" title="Участникам локальных войн и конфликтов" url="{node3}" target=""/>
+      <hotspot pan="-68.59" tilt="1.38" description="" id="Point02" skinid="ht_node" title="Экспозиция &quot;Под стук копыт белого оленя&quot;" url="{node7}" target=""/>
+      <hotspot pan="-72.07" tilt="1.45" description="" id="Point03" skinid="ht_node" title="Экспозиция &quot;Детсво, опаленное войной&quot;" url="{node10}" target=""/>
+      <hotspot pan="154.75" tilt="9.72" description="" id="Point04" skinid="ht_image" title="Фото - Салют в день округа" url="images/IMG_2716-2-3.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node5">
+    <input leveltileurl="tiles/node5/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="-24">
+      <start pan="-120.83" tilt="0" fov="78.7" projection="4"/>
+      <flyin pan="11.37" tilt="-90" fov="232.8" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="23.07.2018" comment="" latitude="67.63844796" description="Кафедральный собор Нарьян-Марской епархии Русской православной церкви. Высота 35 м" author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Богоявленский собор" longitude="53.00886691" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="93.18" tilt="0.48" description="" id="Point01" skinid="ht_node" title="Площадь Ленина" url="{node2}" target=""/>
+      <hotspot pan="-149.01" tilt="7.89" description="" id="Point02" skinid="ht_image" title="Фото - Путевая стелла" url="images/IMG_3144.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node7">
+    <input leveltileurl="tiles/node7/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="61">
+      <start pan="9.04" tilt="0" fov="78.7" projection="4"/>
+      <flyin pan="33.57" tilt="-90" fov="232.8" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="04.08.2018" comment="" latitude="67.64042142" description="Выставка художественных работ из собрания Национальной галереи Республики Коми «Под стук копыт белого оленя», которая представляет зрителю произведения, посвящённые теме оленеводства.&#xa;&#xa;   Она проходит в рамках объявленного Года оленеводства в Ненецком округе, а её открытие приурочено ко Дню Оленя - профессиональному празднику работников оленеводства в НАО и республике Коми. " author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Выставка «ПОД СТУК КОПЫТ БЕЛОГО ОЛЕНЯ»" longitude="53.01057816" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="164" tilt="-2.81" description="" id="Point01" skinid="ht_node" title="Участникам локальных войн и конфликтов" url="{node3}" target=""/>
+      <hotspot pan="-174.47" tilt="-3.21" description="" id="Point02" skinid="ht_node" title="Подвигу участников оленно-транспортных батальонов" url="{node4}" target=""/>
+      <hotspot pan="-37.92" tilt="-14.34" description="" id="Point03" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node8}" target=""/>
+      <hotspot pan="-90.17" tilt="-12.08" description="" id="Point04" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node6}" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node8">
+    <input leveltileurl="tiles/node8/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="68">
+      <start pan="0.98" tilt="0" fov="78.7" projection="4"/>
+      <flyin pan="-70.75" tilt="-65.18" fov="232.8" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="04.08.2018" comment="" latitude="67.64041530" description="Выставка художественных работ из собрания Национальной галереи Республики Коми «Под стук копыт белого оленя», которая представляет зрителю произведения, посвящённые теме оленеводства.&#xa;&#xa;   Она проходит в рамках объявленного Года оленеводства в Ненецком округе, а её открытие приурочено ко Дню Оленя - профессиональному празднику работников оленеводства в НАО и республике Коми. " author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Выставка «ПОД СТУК КОПЫТ БЕЛОГО ОЛЕНЯ»" longitude="53.01081419" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="147.77" tilt="-15.35" description="" id="Point01" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node7}" target=""/>
+      <hotspot pan="-125.59" tilt="-23.13" description="" id="Point02" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node6}" target=""/>
+      <hotspot pan="-21.63" tilt="15.89" description="" id="Point03" skinid="ht_image" title="" url="images/IMG_9768.jpg" target=""/>
+      <hotspot pan="34.76" tilt="10.92" description="" id="Point04" skinid="ht_image" title="" url="images/IMG_9790.jpg" target=""/>
+      <hotspot pan="-133.09" tilt="10.26" description="" id="Point05" skinid="ht_image" title="" url="images/IMG_9777.jpg" target=""/>
+      <hotspot pan="-144.38" tilt="1.28" description="" id="Point06" skinid="ht_image" title="" url="images/IMG_9778.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node6">
+    <input leveltileurl="tiles/node6/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="163">
+      <start pan="-0.38" tilt="0.01" fov="100.6" projection="4"/>
+      <flyin pan="-103.35" tilt="-90" fov="183.9" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="04.08.2018" comment="" latitude="67.64037448" description="Выставка художественных работ из собрания Национальной галереи Республики Коми «Под стук копыт белого оленя», которая представляет зрителю произведения, посвящённые теме оленеводства.&#xa;&#xa;   Она проходит в рамках объявленного Года оленеводства в Ненецком округе, а её открытие приурочено ко Дню Оленя - профессиональному празднику работников оленеводства в НАО и республике Коми. " author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Выставка «ПОД СТУК КОПЫТ БЕЛОГО ОЛЕНЯ»" longitude="53.01074982" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="-150.22" tilt="-11.98" description="" id="Point01" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node7}" target=""/>
+      <hotspot pan="166.98" tilt="-27.55" description="" id="Point02" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node8}" target=""/>
+      <hotspot pan="-54.96" tilt="15.27" description="" id="Point03" skinid="ht_image" title="" url="images/IMG_9777.jpg" target=""/>
+      <hotspot pan="-37.89" tilt="-36.4" description="" id="Point04" skinid="ht_image" title="" url="images/IMG_9774.jpg" target=""/>
+      <hotspot pan="-70.58" tilt="2.32" description="" id="Point05" skinid="ht_image" title="" url="images/IMG_9778.jpg" target=""/>
+      <hotspot pan="129.7" tilt="12.01" description="" id="Point06" skinid="ht_image" title="" url="images/IMG_9768.jpg" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node10">
+    <input leveltileurl="tiles/node10/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="-100">
+      <start pan="-122.37" tilt="0" fov="93" projection="4"/>
+      <flyin pan="171.27" tilt="-58.66" fov="170" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="17.04.2018" comment="" latitude="67.64043060" description="В основе выставки - воспоминания 33 детей войны, которые подтверждены и дополнены документальными данными из фондов музея, Государственных архивов Ненецкого округа и Архангельской области. Выставка раскрывает четыре темы. Знакомит с жизнью самых юных жителей округа, показывает школьную жизнь – без игрушек, на полуголодном пайке, в холодных зданиях школ… Особое место уделяется труду детей в годы войны: на сенокосе, в рыболовецких бригадах, на строительстве аэродрома, на сборе грибов и ягод, в быту – они помогали взрослым ковать Победу над врагом. Отдельный комплекс рассказывает о быте семьи фронтовика." author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Выставка «ДЕТСТВО, ОПАЛЁННОЕ ВОЙНОЙ»" longitude="53.01061839" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="32.55" tilt="-2.09" description="" id="Point01" skinid="ht_node" title="Участникам локальных войн и конфликтов" url="{node3}" target=""/>
+      <hotspot pan="46.93" tilt="-1.71" description="" id="Point02" skinid="ht_node" title="Подвигу участников оленно-транспортных батальонов" url="{node4}" target=""/>
+      <hotspot pan="144.51" tilt="-14.88" description="" id="Point03" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node11}" target=""/>
+      <hotspot pan="101.43" tilt="-7.4" description="" id="Point04" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node9}" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node11">
+    <input leveltileurl="tiles/node11/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="57">
+      <start pan="-15.29" tilt="-0.12" fov="93" projection="4"/>
+      <flyin pan="-43.88" tilt="-75.97" fov="215.2" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="17.04.2018 " comment="" latitude="67.64040917" description="В основе выставки - воспоминания 33 детей войны, которые подтверждены и дополнены документальными данными из фондов музея, Государственных архивов Ненецкого округа и Архангельской области. Выставка раскрывает четыре темы. Знакомит с жизнью самых юных жителей округа, показывает школьную жизнь – без игрушек, на полуголодном пайке, в холодных зданиях школ… Особое место уделяется труду детей в годы войны: на сенокосе, в рыболовецких бригадах, на строительстве аэродрома, на сборе грибов и ягод, в быту – они помогали взрослым ковать Победу над врагом. Отдельный комплекс рассказывает о быте семьи фронтовика." author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Выставка «ДЕТСТВО, ОПАЛЁННОЕ ВОЙНОЙ»" longitude="53.01077932" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="139.7" tilt="-18.97" description="" id="Point01" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node10}" target=""/>
+      <hotspot pan="-134.54" tilt="-16.71" description="" id="Point02" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node9}" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+  <panorama id="node9">
+    <input leveltileurl="tiles/node9/cf_%c/l_%l/c_%x/tile_%y.jpg" height="2500" width="2500" levelingpitch="0" levelbiashidpi="0.400" levelbias="0.400" leveltilesize="510" overlap="1" levelingroll="0">
+      <level preload="0" height="2500" width="2500" predecode="0"/>
+      <level preload="0" height="1250" width="1250" predecode="0"/>
+      <level preload="0" height="625" width="625" predecode="0"/>
+      <level preload="1" height="312" width="312" predecode="1"/>
+      <preview strip="1" color="0x808080"/>
+    </input>
+    <view fovmode="0" pannorth="-56">
+      <start pan="-6.21" tilt="0" fov="79.3" projection="4"/>
+      <flyin pan="-70.87" tilt="-82.36" fov="170" projection="9"/>
+      <min pan="0" tilt="-90" fov="5"/>
+      <max pan="360" fovfisheye="360" tilt="90" fovstereographic="270" fov="120" scaletofit="1"/>
+    </view>
+    <userdata source="" tags="JPEG" datetime="17.04.2018" comment="" latitude="67.64037142" description="В основе выставки - воспоминания 33 детей войны, которые подтверждены и дополнены документальными данными из фондов музея, Государственных архивов Ненецкого округа и Архангельской области. Выставка раскрывает четыре темы. Знакомит с жизнью самых юных жителей округа, показывает школьную жизнь – без игрушек, на полуголодном пайке, в холодных зданиях школ… Особое место уделяется труду детей в годы войны: на сенокосе, в рыболовецких бригадах, на строительстве аэродрома, на сборе грибов и ягод, в быту – они помогали взрослым ковать Победу над врагом. Отдельный комплекс рассказывает о быте семьи фронтовика." author="КУ НАО &quot;НИАЦ&quot;" info="" customnodeid="" title="Выставка «ДЕТСТВО, ОПАЛЁННОЕ ВОЙНОЙ»" longitude="53.01071227" copyright="А.Парсуков"/>
+    <hotspots height="20" width="180" wordwrap="1">
+      <label borderradius="1" height="20" width="180" enabled="1" backgroundcolor="0xffffff" borderalpha="1" textcolor="0x000000" border="1" textalpha="1" wordwrap="1" background="1" backgroundalpha="1" bordercolor="0x000000"/>
+      <polystyle handcursor="1" backgroundcolor="0x0000ff" borderalpha="1" mode="0" backgroundalpha="0.2509803921568627" bordercolor="0x0000ff"/>
+      <hotspot pan="-27.74" tilt="-12.64" description="" id="Point01" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node10}" target=""/>
+      <hotspot pan="-76.35" tilt="-16.13" description="" id="Point02" skinid="ht_node" title="ЭКСПОЗИЦИЯ МУЗЕЯ" url="{node11}" target=""/>
+    </hotspots>
+    <media/>
+    <transition type="crossdissolve" blendtime="1" zoomoutpause="1" zoomfov="20" enabled="1" blendcolor="0x000000" zoomin="0" zoomspeed="2" zoomout="0" softedge="0"/>
+    <autorotate returntohorizon="0.100" nodedelay="0.00" delay="0.00" enabled="1" startloaded="1" speed="0.010" noderandom="1" useanimation="0"/>
+    <flyintransition enabled="1" speed="2.00"/>
+    <animation syncanimationwithvideo="0" useinautorotation="0"/>
+    <control lockedkeyboardzoom="0" dblclickfullscreen="0" sensitivity="8" invertcontrol="1" speedwheel="1" lockedkeyboard="0" contextprojections="0" lockedmouse="0" hideabout="0" rubberband="0" contextfullscreen="0" simulatemass="1" lockedwheel="0" invertwheel="0"/>
+  </panorama>
+</tour>

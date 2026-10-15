@@ -192,6 +192,8 @@ interface NgwMapInstance {
   enableSelection?: () => void;
   disableSelection?: () => void;
   emitter?: EventEmitter;
+  getBounds?: () => unknown;
+  fitBounds?: (bounds: unknown) => void;
   connector?: {
     /** Информация о ресурсе NGW (SDK): id, keyname или параметры поиска */
     getResource: (resource: number) => Promise<unknown>;
@@ -226,7 +228,7 @@ interface MapClientProps {
 }
 
 /** Радиус поиска объектов вокруг точки клика (в пикселях). */
-const IDENTIFY_PIXEL_RADIUS = 15;
+const IDENTIFY_PIXEL_RADIUS = 25;
 
 // ──────────────────────────────────────────────────────────────────────────────
 //  ИНСТРУМЕНТЫ КАРТЫ: КОНФИГУРАЦИЯ
@@ -310,14 +312,20 @@ function parseOrderDate(value: unknown): { display: string; sortable: string } {
   if (isRecord(value) && value.year && value.month && value.day) {
     const d = String(value.day).padStart(2, "0");
     const m = String(value.month).padStart(2, "0");
-    return { display: `${d}.${m}.${value.year}`, sortable: `${value.year}/${m}/${d}` };
+    return {
+      display: `${d}.${m}.${value.year}`,
+      sortable: `${value.year}/${m}/${d}`,
+    };
   }
 
   const text = String(value ?? "");
   const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
 
   if (iso) {
-    return { display: `${iso[3]}.${iso[2]}.${iso[1]}`, sortable: `${iso[1]}/${iso[2]}/${iso[3]}` };
+    return {
+      display: `${iso[3]}.${iso[2]}.${iso[1]}`,
+      sortable: `${iso[1]}/${iso[2]}/${iso[3]}`,
+    };
   }
 
   const [day, month, year] = text.split(".");
@@ -346,7 +354,8 @@ const SELECT_TOOLS: Partial<Record<PanelToolId, SelectToolConfig>> = {
       p.order_number && p.order_number !== "-"
         ? `№ ${p.order_number} от ${parseOrderDate(p.order_date).display}`
         : "Отсутствуют данные",
-    groupKey: (p) => `${parseOrderDate(p.order_date).sortable}${p.order_number}`,
+    groupKey: (p) =>
+      `${parseOrderDate(p.order_date).sortable}${p.order_number}`,
     isEmpty: (p) => !p.order_number || p.order_number === "-",
     action: "identify",
   },
@@ -540,6 +549,95 @@ function formatPoint(point: MapPoint): string {
  * Учитывает вложенные группы: если встречается группа с детьми — спускается внутрь.
  * Возвращает плоский массив слоёв для отображения в сайдбаре и настройки идентификации.
  */
+/** Свойство узла дерева SDK (например, «visibility»). */
+interface SdkProperty {
+  get?: () => unknown;
+  set?: (value: boolean, options?: Record<string, unknown>) => void;
+}
+
+/** Узел дерева слоёв веб-карты в SDK (как layer в оригинальном createTreeItem). */
+interface SdkTreeNode {
+  id: string;
+  item?: WebMapItem;
+  properties?: { property?: (name: string) => SdkProperty | undefined };
+  tree?: { getChildren?: () => SdkTreeNode[] };
+  /** Легенда слоя средствами SDK (как layer.getLegend() в оригинале) */
+  getLegend?: () => Promise<unknown>;
+}
+
+/** Находит корневой узел дерева веб-карты: getLayer(<слой веб-карты>).layer. */
+function findWebmapTree(
+  map: NgwMapInstance,
+  resourceId: number,
+): SdkTreeNode | null {
+  const candidates = [
+    String(resourceId),
+    "webmap",
+    ...(map.getLayers?.() ?? []),
+  ];
+
+  for (const id of candidates) {
+    try {
+      const adapter = map.getLayer?.(id) as unknown as
+        | { layer?: SdkTreeNode }
+        | undefined;
+
+      if (typeof adapter?.layer?.tree?.getChildren === "function") {
+        return adapter.layer;
+      }
+    } catch {
+      // слой с таким id недоступен — пробуем следующий
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Собирает узлы-слои дерева SDK (с обходом групп). Порядок — как в оригинале:
+ * getChildren() возвращает слои снизу вверх, поэтому разворачиваем (reverse).
+ * В parentsOut для каждого слоя записываются его группы-родители (от внешней к внутренней).
+ */
+function collectTreeLayers(
+  node: SdkTreeNode,
+  parents: SdkTreeNode[] = [],
+  parentsOut: Record<string, SdkTreeNode[]> = {},
+): SdkTreeNode[] {
+  const result: SdkTreeNode[] = [];
+  const children = [...(node.tree?.getChildren?.() ?? [])].reverse();
+
+  for (const child of children) {
+    if (child.item?.item_type === "layer") {
+      result.push(child);
+      parentsOut[child.id] = parents;
+    } else {
+      result.push(...collectTreeLayers(child, [...parents, child], parentsOut));
+    }
+  }
+
+  return result;
+}
+
+/** Собственная видимость узла дерева SDK (undefined — если SDK её не отдаёт). */
+function getNodeVisibility(node: SdkTreeNode | undefined): boolean | undefined {
+  const value = node?.properties?.property?.("visibility")?.get?.();
+  return typeof value === "boolean" ? value : undefined;
+}
+
+/**
+ * Слой реально виден, только если включён он сам и все его группы-родители
+ * (в оригинале у групп были свои чекбоксы; в плоском списке сайдбара их нет).
+ */
+function isTreeLayerVisible(
+  node: SdkTreeNode | undefined,
+  parents: SdkTreeNode[],
+): boolean | undefined {
+  const own = getNodeVisibility(node);
+  if (own === undefined) return undefined;
+
+  return own && parents.every((parent) => getNodeVisibility(parent) !== false);
+}
+
 function getLayerItems(items: WebMapItem[]): WebMapItem[] {
   const result: WebMapItem[] = [];
 
@@ -742,31 +840,37 @@ function buildIdentifyItem(
 function normalizeLegend(value: unknown): LegendItem[] {
   const result: LegendItem[] = [];
 
-  if (!Array.isArray(value)) {
-    return result;
-  }
+  const pushItem = (item: unknown) => {
+    if (!isRecord(item)) return;
 
-  for (const layerLegend of value) {
-    if (!isRecord(layerLegend)) continue;
+    const symbol = isRecord(item.symbol) ? item.symbol : undefined;
+    const format =
+      typeof symbol?.format === "string" ? symbol.format : undefined;
+    const data = typeof symbol?.data === "string" ? symbol.data : undefined;
 
-    const items = layerLegend.legend;
-    if (!Array.isArray(items)) continue;
+    if (!format || !data) return;
 
-    for (const item of items) {
-      if (!isRecord(item)) continue;
+    result.push({
+      icon: `data:image/${format};base64,${data}`,
+      label: typeof item.name === "string" ? item.name : undefined,
+    });
+  };
 
-      const symbol = isRecord(item.symbol) ? item.symbol : undefined;
-      const format =
-        typeof symbol?.format === "string" ? symbol.format : undefined;
-      const data = typeof symbol?.data === "string" ? symbol.data : undefined;
+  // Понимает три формата: [{ legend: [...] }], { legend: [...] } и [{ symbol, name }]
+  const visit = (entry: unknown) => {
+    if (!isRecord(entry)) return;
 
-      if (!format || !data) continue;
-
-      const icon = `data:image/${format};base64,${data}`;
-      const label = typeof item.name === "string" ? item.name : undefined;
-
-      result.push({ icon, label });
+    if (Array.isArray(entry.legend)) {
+      entry.legend.forEach(pushItem);
+    } else {
+      pushItem(entry);
     }
+  };
+
+  if (Array.isArray(value)) {
+    value.forEach(visit);
+  } else {
+    visit(value);
   }
 
   return result;
@@ -831,6 +935,10 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   // Карта: overlayId → styleId. Нужна для REST-запроса легенды по styleId.
   const layerStyleIdsRef = useRef<Record<string, number>>({});
 
+  // Узлы дерева слоёв SDK по id: через них идёт и название, и переключение видимости
+  const treeNodesRef = useRef<Record<string, SdkTreeNode>>({});
+  const treeParentsRef = useRef<Record<string, SdkTreeNode[]>>({});
+
   // Сырые объекты базовых слоёв — нужны для передачи в showLayer()
   const baseLayersRef = useRef<BaseLayerEntry[]>([]);
 
@@ -841,9 +949,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   const activeToolRef = useRef<PanelToolId | null>(null);
 
   // Кнопки-переключатели: нужны, чтобы гасить неактивные при смене инструмента
-  const toolControlsRef = useRef<Partial<Record<PanelToolId, ToggleControlLike>>>(
-    {},
-  );
+  const toolControlsRef = useRef<
+    Partial<Record<PanelToolId, ToggleControlLike>>
+  >({});
 
   // Идёт ли измерение (leaflet-measure): на это время клики не должны открывать сайдбар
   const measuringRef = useRef(false);
@@ -938,6 +1046,46 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   async function handleLayerToggle(id: string) {
     const map = mapInstance.current;
 
+    // Основной способ (как в оригинале): видимость узла дерева SDK
+    const visibility =
+      treeNodesRef.current[id]?.properties?.property?.("visibility");
+
+    if (map && visibility?.set) {
+      const parents = treeParentsRef.current[id] ?? [];
+      const current =
+        isTreeLayerVisible(treeNodesRef.current[id], parents) ??
+        loadedLayers.find((layer) => layer.id === id)?.active ??
+        false;
+      const next = !current;
+
+      handleClearFeature();
+
+      // Включая слой, включаем и его группы: иначе слой в выключенной группе остаётся скрытым
+      if (next) {
+        for (const parent of parents) {
+          parent.properties?.property?.("visibility")?.set?.(true, {
+            propagation: false,
+          });
+        }
+      }
+
+      visibility.set(next, { propagation: false });
+      map.invalidateSize?.();
+
+      // Как в оригинале («Upload map»): принудительная перерисовка после переключения,
+      // без неё слой может не появиться до следующего сдвига карты
+      const bounds = map.getBounds?.();
+      if (bounds) map.fitBounds?.(bounds);
+
+      setLoadedLayers((currentLayers) =>
+        currentLayers.map((layer) =>
+          layer.id === id ? { ...layer, active: next } : layer,
+        ),
+      );
+
+      return;
+    }
+
     if (!map?.toggleLayer) {
       return;
     }
@@ -1016,6 +1164,34 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   async function fetchLegend(layerId: string): Promise<LegendItem[]> {
     const map = mapInstance.current;
     if (!map) return [];
+
+    // ── Шаг 0: легенда узла дерева SDK — как в оригинале (layer.getLegend()) ──
+    // Пустой массив от SDK означает «у слоя нет легенды» — REST-запрос не нужен
+    // (он давал бы 404). Любая неудача или непонятный формат — идём к запасным шагам.
+    const treeNode = treeNodesRef.current[layerId];
+
+    if (treeNode?.getLegend) {
+      try {
+        const raw = await treeNode.getLegend();
+        const legend = normalizeLegend(raw);
+
+        if (legend.length > 0) return legend;
+
+        if (Array.isArray(raw) ? raw.length === 0 : raw == null) {
+          return [];
+        }
+
+        console.warn(
+          `Легенда слоя ${layerId}: неизвестный формат ответа SDK`,
+          raw,
+        );
+      } catch (error) {
+        console.warn(
+          `Легенда слоя ${layerId} через узел дерева недоступна:`,
+          error,
+        );
+      }
+    }
 
     // ── Шаг 1: пробуем SDK getLegend() ──
     try {
@@ -1129,7 +1305,10 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
     const findInTree = (items: SdkTreeItem[]): SdkTreeItem | undefined => {
       for (const item of items) {
-        if (norm(item.display_name) === norm(layerName) && item.style_parent_id) {
+        if (
+          norm(item.display_name) === norm(layerName) &&
+          item.style_parent_id
+        ) {
           return item;
         }
         const nested = item.children ? findInTree(item.children) : undefined;
@@ -1169,7 +1348,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
 
     // 3) Стиль слоя из дерева веб-карты (REST)
     const layerItems = getLayerItems(webmapChildrenRef.current);
-    const item = layerItems.find((i) => norm(i.display_name) === norm(layerName));
+    const item = layerItems.find(
+      (i) => norm(i.display_name) === norm(layerName),
+    );
 
     if (!item) {
       console.warn(
@@ -1198,7 +1379,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   }
 
   /** Первый подходящий ID векторного слоя (для экомониторинга). */
-  async function resolveVectorLayerId(layerName: string): Promise<number | null> {
+  async function resolveVectorLayerId(
+    layerName: string,
+  ): Promise<number | null> {
     const candidates = await resolveVectorLayerCandidates(layerName);
     return candidates[0]?.id ?? null;
   }
@@ -1206,7 +1389,8 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
   /** Диагностика средствами SDK: есть ли ресурс с таким ID и чем он является. */
   async function describeResource(resourceId: number): Promise<string> {
     try {
-      const info = await mapInstance.current?.connector?.getResource(resourceId);
+      const info =
+        await mapInstance.current?.connector?.getResource(resourceId);
       const resource =
         isRecord(info) && isRecord(info.resource) ? info.resource : undefined;
 
@@ -1411,7 +1595,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     if (!baseUrl) return {};
 
     const data = await fetchJson(`${baseUrl}/api/resource/${layerId}`);
-    const fields = isRecord(data.feature_layer) ? data.feature_layer.fields : null;
+    const fields = isRecord(data.feature_layer)
+      ? data.feature_layer.fields
+      : null;
     const result: Record<string, string> = {};
 
     if (Array.isArray(fields)) {
@@ -1523,7 +1709,10 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         "polygon",
         {
           type: "Feature",
-          geometry: { type: "Polygon", coordinates: [[...coordinates, coordinates[0]]] },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[...coordinates, coordinates[0]]],
+          },
           properties: {},
         },
         {
@@ -1580,7 +1769,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         if (cancelled) return;
 
         if (candidates.length === 0) {
-          setSelectMessage(`Слой «${config.layerName}» не найден в этой веб-карте`);
+          setSelectMessage(
+            `Слой «${config.layerName}» не найден в этой веб-карте`,
+          );
           return;
         }
 
@@ -1598,7 +1789,10 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
             );
             break;
           } catch (error) {
-            console.warn(`Слой ${candidate.id} (${candidate.source}) не подошёл:`, error);
+            console.warn(
+              `Слой ${candidate.id} (${candidate.source}) не подошёл:`,
+              error,
+            );
             attempts.push(
               `${candidate.source}: ${error instanceof Error ? error.message : String(error)}`,
             );
@@ -1617,17 +1811,26 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         selectLayerIdRef.current = layerId;
 
         // Для диагностики: реальные имена полей слоя (если подписи в списке «пустые»)
-        console.info(`Поля слоя «${config.layerName}»:`, Object.keys(rows[0]?.fields ?? {}));
+        console.info(
+          `Поля слоя «${config.layerName}»:`,
+          Object.keys(rows[0]?.fields ?? {}),
+        );
 
         const options = buildSelectOptions(config, rows);
         setSelectOptions(options);
 
         if (options.length === 0) {
-          console.warn("Пустой список для слоя", config.layerName, { layerId, rows });
+          console.warn("Пустой список для слоя", config.layerName, {
+            layerId,
+            rows,
+          });
           setSelectMessage("В слое нет объектов или не найдены нужные поля");
         }
       } catch (error) {
-        console.error(`Не удалось загрузить слой «${config.layerName}»:`, error);
+        console.error(
+          `Не удалось загрузить слой «${config.layerName}»:`,
+          error,
+        );
         if (!cancelled) {
           setSelectMessage(
             `Не удалось загрузить список: ${error instanceof Error ? error.message : String(error)}`,
@@ -1676,15 +1879,24 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     map.setCursor("crosshair");
 
     const onPick = (event: LeafletMouseEventLike) => {
-      setPickedPoints((previous) => [...previous, normalizePoint(event.latlng)]);
+      setPickedPoints((previous) => [
+        ...previous,
+        normalizePoint(event.latlng),
+      ]);
     };
 
     leafletMap.on("click", onPick);
 
     return () => {
-      leafletMap.off("click", onPick);
-      map.enableSelection?.();
-      map.setCursor("default");
+      // При смене карты экземпляр уже может быть уничтожен — не даём очистке упасть
+      try {
+        leafletMap.off("click", onPick);
+        map.enableSelection?.();
+        map.setCursor("default");
+      } catch (error) {
+        console.warn("Не удалось сбросить инструмент координат:", error);
+      }
+
       setPickedPoints([]);
     };
   }, [activeTool]);
@@ -1792,6 +2004,12 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
               selectable: true, // включить выбор объектов кликом
             },
           ],
+          // Стиль по умолчанию для векторных слоёв и подсветки — как в оригинале
+          paint: {
+            color: "#50b7cd",
+            opacity: 0.5,
+            weight: 3,
+          },
           pixelRadius: IDENTIFY_PIXEL_RADIUS,
         } as unknown as Record<string, unknown>)) as unknown as NgwMapInstance;
 
@@ -1849,8 +2067,56 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         const layerIds = map.getLayers?.() ?? [];
 
         // Оверлейные слои — всё, что не базовые подложки (их ID начинается с "webmap-baselayer")
-        const overlayIds = layerIds.filter(
+        const filteredOverlayIds = layerIds.filter(
           (id) => !id.startsWith("webmap-baselayer"),
+        );
+
+        // Основной способ (как в оригинале): слои берём из дерева SDK — каждый узел
+        // сам содержит и название (item), и управление видимостью (visibility)
+        const treeRoot = findWebmapTree(map, resourceId);
+        const treeParents: Record<string, SdkTreeNode[]> = {};
+        const treeLayers = treeRoot
+          ? collectTreeLayers(treeRoot, [], treeParents)
+          : [];
+
+        treeParentsRef.current = treeParents;
+
+        treeNodesRef.current = Object.fromEntries(
+          treeLayers.map((node) => [node.id, node]),
+        );
+
+        const overlayIds =
+          treeLayers.length > 0
+            ? treeLayers.map((node) => node.id)
+            : filteredOverlayIds;
+
+        // Диагностика: все слои веб-карты с их стилем и включённостью по умолчанию
+        console.table(
+          treeLayers.map((node) => {
+            const raw = (node.item ?? {}) as unknown as Record<string, unknown>;
+
+            return {
+              id: node.id,
+              название: node.item?.display_name,
+              стиль: raw.layer_style_id,
+              включён: raw.layer_enabled,
+              группа: (treeParents[node.id] ?? [])
+                .map((parent) => parent.item?.display_name)
+                .join(" / "),
+              "группа включена": (treeParents[node.id] ?? []).every(
+                (parent) => getNodeVisibility(parent) !== false,
+              ),
+              идентификация: raw.layer_identifiable,
+              "масштаб от": raw.layer_min_scale_denom,
+              "масштаб до": raw.layer_max_scale_denom,
+            };
+          }),
+        );
+
+        console.info(
+          treeLayers.length > 0
+            ? `Слои карты: дерево SDK (${treeLayers.length} шт.)`
+            : "Дерево слоёв SDK не найдено — слои сопоставляются по порядку (названия могут не совпадать)",
         );
 
         // Запрашиваем дерево веб-карты через REST API, чтобы получить имена слоёв
@@ -1876,18 +2142,42 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         // Рекурсивно собираем все слои (включая вложенные группы)
         const layerItems = getLayerItems(items);
 
-        // Сопоставляем overlayId с элементом дерева веб-карты по индексу
-        const layerMap = new Map(
-          layerItems.map((item, index) => {
-            const overlayId = overlayIds[index];
+        // Сопоставляем overlayId с элементом дерева веб-карты.
+        // Основной способ — как в оригинале: элемент берётся у самого слоя SDK
+        // (getLayer(id).layer.item), поэтому имя всегда принадлежит тому слою,
+        // которым управляет кнопка. Порядок в списках у SDK и у REST-дерева разный.
+        const layerMap = new Map<string, WebMapItem>();
 
-            if (!overlayId) {
-              return [null, item] as const;
+        for (const node of treeLayers) {
+          if (node.item) layerMap.set(node.id, node.item);
+        }
+
+        for (const id of treeLayers.length > 0 ? [] : overlayIds) {
+          try {
+            const adapter = map.getLayer?.(id) as unknown as
+              | { layer?: { item?: WebMapItem } }
+              | undefined;
+            const sdkItem = adapter?.layer?.item;
+
+            if (sdkItem?.item_type === "layer" && sdkItem.display_name) {
+              layerMap.set(id, sdkItem);
             }
+          } catch {
+            // у слоя нет данных дерева (служебный слой) — пропускаем
+          }
+        }
 
-            return [overlayId, item] as const;
-          }),
-        );
+        // Запасной способ — по порядку, только если SDK не дал элементов ни для одного слоя
+        if (layerMap.size === 0) {
+          console.warn(
+            "Элементы слоёв из SDK недоступны, сопоставление по порядку (имена могут не совпадать)",
+          );
+
+          overlayIds.forEach((id, index) => {
+            const item = layerItems[index];
+            if (item) layerMap.set(id, item);
+          });
+        }
 
         // Формируем массив слоёв для сайдбара
         const allLayers: Layer[] = overlayIds
@@ -1901,7 +2191,14 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
             return {
               id,
               name: item.display_name?.trim() || id,
-              active: map.isLayerVisible?.(id) ?? item.layer_enabled ?? true,
+              active:
+                isTreeLayerVisible(
+                  treeNodesRef.current[id],
+                  treeParentsRef.current[id] ?? [],
+                ) ??
+                map.isLayerVisible?.(id) ??
+                item.layer_enabled ??
+                true,
             };
           })
           .filter((layer): layer is Layer => layer !== null);
@@ -1920,8 +2217,8 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         // styleId нужен для REST-запроса легенды (fetchLegend, шаг 2)
         const styleIdsMap: Record<string, number> = {};
 
-        overlayIds.forEach((id, index) => {
-          const item = layerItems[index];
+        overlayIds.forEach((id) => {
+          const item = layerMap.get(id);
 
           if (!item) {
             return;
@@ -1946,8 +2243,8 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
           name: string;
         }> = [];
 
-        overlayIds.forEach((id, index) => {
-          const item = layerItems[index];
+        overlayIds.forEach((id) => {
+          const item = layerMap.get(id);
 
           if (!item) {
             return;
@@ -2264,6 +2561,8 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
       identifyTargetsRef.current = [];
       initializingRef.current = false;
       layerStyleIdsRef.current = {};
+      treeNodesRef.current = {};
+      treeParentsRef.current = {};
       baseLayersRef.current = [];
       toolControlsRef.current = {};
       toolRowsRef.current = {};
@@ -2328,6 +2627,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         {/* Позиционируется в правом нижнем углу, отступ зависит от состояния сайдбара */}
         <div
           ref={coordsElement}
+          data-map-overlay=""
           className={`pointer-events-none absolute bottom-[28px] z-[1000] rounded bg-white/90 px-[10px] py-[4px] font-mono text-[12px] text-gray-800 shadow ${
             isSidebarOpen ? "right-[336px]" : "right-[8px]"
           }`}
@@ -2353,7 +2653,10 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         {activeTool === "ecomonTool" && <EcomonPanel api={ecomonApi} />}
 
         {activeTool === "coordTool" && (
-          <CoordInputPanel onDraw={handleCoordDraw} onClear={clearCoordLayers} />
+          <CoordInputPanel
+            onDraw={handleCoordDraw}
+            onClear={clearCoordLayers}
+          />
         )}
 
         {activeTool === "coordFromMapTool" && (

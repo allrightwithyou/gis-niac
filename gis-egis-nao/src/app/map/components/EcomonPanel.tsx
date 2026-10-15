@@ -28,7 +28,16 @@ const PDK_COLORS = ["#af0808", "#ba6b03", "#bb05e8", "#ff9000", "#068900"];
 
 /** Поля, которые не выводятся в таблицу показателей (без префикса типа). */
 const EXCLUDED_SUFFIXES = [
-  "area", "location", "name", "gsh", "msh", "ssh", "gdl", "mdl", "sdl", "namecode",
+  "area",
+  "location",
+  "name",
+  "gsh",
+  "msh",
+  "ssh",
+  "gdl",
+  "mdl",
+  "sdl",
+  "namecode",
 ];
 
 // ── Типы ─────────────────────────────────────────────────────────────────────
@@ -77,7 +86,12 @@ interface StatData {
 }
 
 interface PlotlyLike {
-  newPlot: (el: HTMLElement, data: unknown[], layout: unknown, config: unknown) => unknown;
+  newPlot: (
+    el: HTMLElement,
+    data: unknown[],
+    layout: unknown,
+    config: unknown,
+  ) => unknown;
   purge: (el: HTMLElement) => void;
 }
 
@@ -93,10 +107,14 @@ const selectClass =
 
 export function EcomonPanel({ api }: { api: EcomonApi }) {
   const [territories, setTerritories] = useState<string[]>([]);
-  const [typeLayers, setTypeLayers] = useState<Partial<Record<TypeKey, number>>>({});
+  const [typeLayers, setTypeLayers] = useState<
+    Partial<Record<TypeKey, number>>
+  >({});
   const [territory, setTerritory] = useState("");
   const [typeKey, setTypeKey] = useState<TypeKey | "">("");
-  const [points, setPoints] = useState<Array<{ name: string; namecode: string }>>([]);
+  const [points, setPoints] = useState<
+    Array<{ name: string; namecode: string }>
+  >([]);
   const [pointCode, setPointCode] = useState("");
   const [records, setRecords] = useState<PointRecord[]>([]);
   const [year, setYear] = useState("");
@@ -140,7 +158,11 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
           api.fetchFeatures(ECOMON_TERRITORIES_RESOURCE_ID, { geom: false }),
           Promise.all(
             (Object.keys(ECOMON_TYPES) as TypeKey[]).map(
-              async (key) => [key, await api.resolveLayerId(ECOMON_TYPES[key].name)] as const,
+              async (key) =>
+                [
+                  key,
+                  await api.resolveLayerId(ECOMON_TYPES[key].name),
+                ] as const,
             ),
           ),
         ]);
@@ -160,7 +182,10 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
         }
         setTypeLayers(layers);
       } catch (error) {
-        console.error("Экомониторинг: не удалось загрузить справочники:", error);
+        console.error(
+          "Экомониторинг: не удалось загрузить справочники:",
+          error,
+        );
         if (!cancelled) {
           setLoadError(
             `Не удалось загрузить справочники (${error instanceof Error ? error.message : String(error)}). Проверьте ID ресурсов в EcomonPanel.tsx`,
@@ -195,10 +220,17 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
         if (cancelled) return;
 
         if (features.length === 0) {
-          console.warn("Экомониторинг: точек не найдено", { territory, typeKey, layerId });
+          console.warn("Экомониторинг: точек не найдено", {
+            territory,
+            typeKey,
+            layerId,
+          });
         }
 
-        if (features.length > 0 && !(`${typeKey}_name` in features[0].properties)) {
+        if (
+          features.length > 0 &&
+          !(`${typeKey}_name` in features[0].properties)
+        ) {
           console.warn(
             `Экомониторинг: у объектов слоя нет поля ${typeKey}_name. Есть поля:`,
             Object.keys(features[0].properties),
@@ -208,11 +240,17 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
         const unique = new Map<string, { name: string; namecode: string }>();
         for (const f of features) {
           const name = String(f.properties[`${typeKey}_name`] ?? "");
-          const namecode = String(f.properties[`${typeKey}_namecode`] ?? "").split("_")[0];
+          const namecode = String(
+            f.properties[`${typeKey}_namecode`] ?? "",
+          ).split("_")[0];
           if (name && !unique.has(name)) unique.set(name, { name, namecode });
         }
 
-        setPoints([...unique.values()].sort((a, b) => a.name.localeCompare(b.name, "ru")));
+        setPoints(
+          [...unique.values()].sort((a, b) =>
+            a.name.localeCompare(b.name, "ru"),
+          ),
+        );
       } catch (error) {
         console.error("Экомониторинг: не удалось загрузить точки:", error);
       }
@@ -285,7 +323,10 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
         api.fetchFieldNames(pdkId),
       ]);
 
-      const excluded = new Set([...EXCLUDED_SUFFIXES.map((s) => `${p}_${s}`), "type"]);
+      const excluded = new Set([
+        ...EXCLUDED_SUFFIXES.map((s) => `${p}_${s}`),
+        "type",
+      ]);
 
       const rows = features
         .map((f) => {
@@ -339,9 +380,13 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
                 setStat(null);
               }}
             >
-              <option value="" disabled>Выберите территорию</option>
+              <option value="" disabled>
+                Выберите территорию
+              </option>
               {territories.map((t) => (
-                <option key={t} value={t} title={t}>{t}</option>
+                <option key={t} value={t} title={t}>
+                  {t}
+                </option>
               ))}
             </select>
 
@@ -354,9 +399,13 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
                 setStat(null);
               }}
             >
-              <option value="" disabled>Выберите тип точки</option>
+              <option value="" disabled>
+                Выберите тип точки
+              </option>
               {(Object.keys(typeLayers) as TypeKey[]).map((key) => (
-                <option key={key} value={key}>{ECOMON_TYPES[key].name}</option>
+                <option key={key} value={key}>
+                  {ECOMON_TYPES[key].name}
+                </option>
               ))}
             </select>
 
@@ -369,9 +418,13 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
                 setStat(null);
               }}
             >
-              <option value="" disabled>Выберите название точки</option>
+              <option value="" disabled>
+                Выберите название точки
+              </option>
               {points.map((point) => (
-                <option key={point.namecode} value={point.namecode}>{point.name}</option>
+                <option key={point.namecode} value={point.namecode}>
+                  {point.name}
+                </option>
               ))}
             </select>
 
@@ -381,9 +434,13 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
               disabled={records.length === 0}
               onChange={(e) => setYear(e.target.value)}
             >
-              <option value="" disabled>Выберите год</option>
+              <option value="" disabled>
+                Выберите год
+              </option>
               {records.map((r) => (
-                <option key={r.year} value={r.year}>{r.year}</option>
+                <option key={r.year} value={r.year}>
+                  {r.year}
+                </option>
               ))}
             </select>
 
@@ -395,7 +452,9 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
                 >
                   <div
                     className="flex items-start justify-between gap-2 bg-gray-50 px-3 py-2"
-                    style={{ borderLeft: `4px solid ${ECOMON_TYPES[typeKey].color}` }}
+                    style={{
+                      borderLeft: `4px solid ${ECOMON_TYPES[typeKey].color}`,
+                    }}
                   >
                     <div className="min-w-0">
                       <div className="text-[11px] uppercase tracking-wide text-gray-500">
@@ -413,13 +472,17 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
                   <dl className="divide-y divide-gray-100 text-[12px]">
                     <InfoRow label="Территория" value={String(r.area ?? "")} />
                     <InfoRow label="Место" value={String(r.location ?? "")} />
-                    <InfoRow label="Координаты" mono value={`${r.lat}\n${r.lng}`} />
+                    <InfoRow
+                      label="Координаты"
+                      mono
+                      value={`${r.lat}\n${r.lng}`}
+                    />
                   </dl>
                 </div>
               ))}
 
             <button
-              className="w-full rounded-md bg-accent px-3 py-2 text-[13px] font-medium text-white shadow-sm transition hover:bg-accent/60 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="w-full rounded-md bg-accent  px-3 py-2 text-[13px] font-medium text-white shadow-sm transition hover:bg-accent/60 disabled:cursor-not-allowed disabled:bg-gray-300"
               disabled={!pointCode}
               onClick={() => void openStat()}
             >
@@ -437,24 +500,42 @@ export function EcomonPanel({ api }: { api: EcomonApi }) {
 // ── Окно показателей: таблица ↔ график ───────────────────────────────────────
 
 /** Строка «подпись — значение» в карточке точки; пустые значения не выводятся. */
-function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function InfoRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   if (!value.trim() || value === "undefined") return null;
 
   return (
     <div className="grid grid-cols-[88px_1fr] gap-2 px-3 py-1.5">
       <dt className="text-gray-500">{label}</dt>
-      <dd className={`whitespace-pre-line break-words ${mono ? "font-mono text-[11px]" : ""}`}>
+      <dd
+        className={`whitespace-pre-line break-words ${mono ? "font-mono text-[11px]" : ""}`}
+      >
         {value}
       </dd>
     </div>
   );
 }
 
-function StatWindow({ stat, onClose }: { stat: StatData; onClose: () => void }) {
+function StatWindow({
+  stat,
+  onClose,
+}: {
+  stat: StatData;
+  onClose: () => void;
+}) {
   const [chartKey, setChartKey] = useState<string | null>(null);
 
   // «Год» выводится в шапке таблицы, остальные показатели — строками
-  const indicators = Object.keys(stat.rows[0] ?? {}).filter((key) => key !== "Год");
+  const indicators = Object.keys(stat.rows[0] ?? {}).filter(
+    (key) => key !== "Год",
+  );
 
   /** Значение превышает хотя бы один ПДК по этому показателю. */
   const exceedsPdk = (key: string, value: unknown) =>
@@ -470,14 +551,19 @@ function StatWindow({ stat, onClose }: { stat: StatData; onClose: () => void }) 
     );
 
   return (
-    <div className="absolute left-[348px] top-[10px] z-[1000] flex max-h-[75vh] w-max max-w-[calc(100vw-380px)] flex-col overflow-hidden rounded-lg bg-white text-[13px] text-gray-800 shadow-lg ring-1 ring-black/5">
+    <div
+      data-map-overlay=""
+      className="absolute left-[348px] top-[10px] z-[1000] flex max-h-[75vh] w-max max-w-[calc(100vw-380px)] flex-col overflow-hidden rounded-lg bg-white text-[13px] text-gray-800 shadow-lg ring-1 ring-black/5"
+    >
       {/* Шапка окна */}
       <div
         className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3"
         style={{ borderTop: `4px solid ${stat.color}` }}
       >
         <div>
-          <div className="text-[14px] font-semibold leading-tight">{stat.title}</div>
+          <div className="text-[14px] font-semibold leading-tight">
+            {stat.title}
+          </div>
           <div className="mt-0.5 text-[11px] text-gray-500">
             {chartKey === null
               ? "Нажмите на название показателя, чтобы построить график"
@@ -521,7 +607,9 @@ function StatWindow({ stat, onClose }: { stat: StatData; onClose: () => void }) 
                         className="flex items-center gap-1.5 text-left text-accent hover:underline"
                         onClick={() => setChartKey(key)}
                       >
-                        <span aria-hidden className="text-[11px] opacity-60">📊</span>
+                        <span aria-hidden className="text-[11px] opacity-60">
+                          📊
+                        </span>
                         {key.length > 20 ? `${key.slice(0, 20)}…` : key}
                       </button>
                     </th>
@@ -588,7 +676,9 @@ function StatWindow({ stat, onClose }: { stat: StatData; onClose: () => void }) 
 function EcomonChart({ stat, chartKey }: { stat: StatData; chartKey: string }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
-  const valid = stat.rows.filter((row) => row[chartKey] !== -1 && row[chartKey] != null);
+  const valid = stat.rows.filter(
+    (row) => row[chartKey] !== -1 && row[chartKey] != null,
+  );
   const years = valid.map((row) => `${row["Год"]} г.`);
   const values = valid.map((row) => Number(row[chartKey]));
 
@@ -615,13 +705,23 @@ function EcomonChart({ stat, chartKey }: { stat: StatData; chartKey: string }) {
           const color = PDK_COLORS[i % PDK_COLORS.length];
 
           shapes.push({
-            type: "line", xref: "paper", x0: 0, x1: 1, y0: pdkValue, y1: pdkValue,
+            type: "line",
+            xref: "paper",
+            x0: 0,
+            x1: 1,
+            y0: pdkValue,
+            y1: pdkValue,
             line: { color, width: 1.5 },
           });
           annotations.push({
-            showarrow: false, x: years[years.length - 1], y: pdkValue, text: pdkValue,
+            showarrow: false,
+            x: years[years.length - 1],
+            y: pdkValue,
+            text: pdkValue,
             hovertext: String(record["Название ПДК"] ?? "Нет данных"),
-            font: { size: 14, color }, xanchor: "right", yanchor: "top",
+            font: { size: 14, color },
+            xanchor: "right",
+            yanchor: "top",
           });
         }
       }
@@ -629,17 +729,34 @@ function EcomonChart({ stat, chartKey }: { stat: StatData; chartKey: string }) {
 
     void import("plotly.js-dist-min").then((module) => {
       if (cancelled) return;
-      plotly = ((module as { default?: PlotlyLike }).default ?? module) as PlotlyLike;
+      plotly = ((module as { default?: PlotlyLike }).default ??
+        module) as PlotlyLike;
 
       plotly.newPlot(
         element,
-        [{
-          type: "bar", x: years, y: values, text: values, textposition: "auto", hoverinfo: "none",
-          marker: { color: stat.color, opacity: 0.7, line: { color: "#000", width: 1.5 } },
-        }],
+        [
+          {
+            type: "bar",
+            x: years,
+            y: values,
+            text: values,
+            textposition: "auto",
+            hoverinfo: "none",
+            marker: {
+              color: stat.color,
+              opacity: 0.7,
+              line: { color: "#000", width: 1.5 },
+            },
+          },
+        ],
         {
-          title: chartKey, font: { size: 14 }, showlegend: false, shapes, annotations,
-          paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+          title: chartKey,
+          font: { size: 14 },
+          showlegend: false,
+          shapes,
+          annotations,
+          paper_bgcolor: "rgba(0,0,0,0)",
+          plot_bgcolor: "rgba(0,0,0,0)",
         },
         { displayModeBar: false, scrollZoom: false },
       );
