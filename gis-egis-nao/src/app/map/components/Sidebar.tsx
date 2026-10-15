@@ -192,7 +192,7 @@ export default function Sidebar({
           {featureCards.map((card) => (
             <div
               key={card.key}
-              className="flex flex-col gap-[6px] pb-[12px] last:border-b-0 last:pb-0"
+              className="flex flex-col gap-[6px] pb-[12px] border-b-[1px] border-black/10 last:border-b-0 last:pb-0"
             >
               {card.layerName && (
                 <p className="text-[12px] text-gray-500">{card.layerName}</p>
