@@ -23,9 +23,19 @@ import "@nextgis/leaflet-map-adapter/lib/leaflet-map-adapter.css";
 // Стили плагина измерений (JS плагина подгружается динамически, только если он нужен)
 import "leaflet-measure/dist/leaflet-measure.css";
 
-import type { Layer, SectionData, WebMapItem } from "./types";
+import type { Layer as BaseLayer, SectionData, WebMapItem } from "./types";
 
-export type { Layer } from "./types";
+/**
+ * Строка списка слоёв в сайдбаре. Кроме обычных слоёв (kind не задан или "layer")
+ * бывают группы ("group"): depth — уровень вложенности, parentId — id группы-родителя,
+ * expanded — раскрыта ли группа по умолчанию (как в настройках веб-карты NGW).
+ */
+export type Layer = BaseLayer & {
+  kind?: "layer" | "group";
+  depth?: number;
+  parentId?: string;
+  expanded?: boolean;
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 //  ИНТЕРФЕЙСЫ: ИДЕНТИФИКАЦИЯ ОБЪЕКТОВ
@@ -193,7 +203,7 @@ interface NgwMapInstance {
   disableSelection?: () => void;
   emitter?: EventEmitter;
   getBounds?: () => unknown;
-  fitBounds?: (bounds: unknown) => void;
+  fitBounds?: (bounds: unknown, options?: { maxZoom?: number }) => void;
   connector?: {
     /** Информация о ресурсе NGW (SDK): id, keyname или параметры поиска */
     getResource: (resource: number) => Promise<unknown>;
@@ -248,18 +258,16 @@ type PanelToolId =
 export type ToolId = PanelToolId | "measureTool";
 
 /**
- * КАКИЕ ИНСТРУМЕНТЫ ПОКАЗЫВАТЬ НА КАКИХ КАРТАХ.
- * Ключ — resourceId веб-карты в NextGIS, значение — список инструментов.
- * Для карт, которых здесь нет, инструменты не появляются.
+ * Инструменты карты задаются в админке (таблица map_tools в PostgreSQL) и приходят
+ * из API /api/maps/<resourceId>/tools — для карт без записей инструментов нет.
+ * Эта проверка оставляет только известные инструменты: список приходит с сервера
+ * и не должен ломать карту.
  */
-const MAP_TOOLS: Record<number, ToolId[]> = {
-  // Пример (подставьте свои ID):
-  262: ["coordTool", "coordFromMapTool", "fishTool"],
-  579: ["ecomonTool", "coordTool", "coordFromMapTool"],
-  1054: ["coordTool", "coordFromMapTool", "ccfTool"],
-  520: ["coordTool", "coordFromMapTool", "zsoTool"],
-  966: ["coordTool", "coordFromMapTool", "settlTool"],
-};
+function isKnownTool(value: unknown): value is ToolId {
+  return (
+    typeof value === "string" && (value === "measureTool" || value in TOOL_META)
+  );
+}
 
 /** Угол карты для кнопок инструментов (NgwMap и Leaflet называют углы по-разному). */
 const TOOLS_NGW_POSITION = "top-left";
@@ -616,6 +624,84 @@ function collectTreeLayers(
   }
 
   return result;
+}
+
+/** Строка дерева слоёв: слой или группа с уровнем вложенности. */
+interface TreeRow {
+  node: SdkTreeNode;
+  kind: "layer" | "group";
+  depth: number;
+  parentId?: string;
+}
+
+/**
+ * Обходит дерево SDK в порядке отображения, возвращая и слои, и группы
+ * (группы нужны для иерархии в сайдбаре). Для каждого узла в parentsOut
+ * записываются его группы-родители.
+ */
+function collectTreeRows(
+  node: SdkTreeNode,
+  parents: SdkTreeNode[] = [],
+  parentsOut: Record<string, SdkTreeNode[]> = {},
+  out: TreeRow[] = [],
+): TreeRow[] {
+  const children = [...(node.tree?.getChildren?.() ?? [])].reverse();
+  const parentId = parents[parents.length - 1]?.id;
+
+  for (const child of children) {
+    if (child.item?.item_type === "layer") {
+      out.push({ node: child, kind: "layer", depth: parents.length, parentId });
+      parentsOut[child.id] = parents;
+    } else if (typeof child.tree?.getChildren === "function") {
+      out.push({ node: child, kind: "group", depth: parents.length, parentId });
+      parentsOut[child.id] = parents;
+      collectTreeRows(child, [...parents, child], parentsOut, out);
+    }
+  }
+
+  return out;
+}
+
+/** Границы геометрии GeoJSON: [minLng, minLat, maxLng, maxLat] или null. */
+function getGeometryBounds(
+  geometry: unknown,
+): [number, number, number, number] | null {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  const visit = (value: unknown) => {
+    if (!Array.isArray(value)) return;
+
+    if (
+      value.length >= 2 &&
+      typeof value[0] === "number" &&
+      typeof value[1] === "number"
+    ) {
+      minX = Math.min(minX, value[0]);
+      maxX = Math.max(maxX, value[0]);
+      minY = Math.min(minY, value[1]);
+      maxY = Math.max(maxY, value[1]);
+      return;
+    }
+
+    value.forEach(visit);
+  };
+
+  const walk = (geom: unknown) => {
+    if (!isRecord(geom)) return;
+
+    if (Array.isArray(geom.geometries)) {
+      geom.geometries.forEach(walk);
+    } else {
+      visit(geom.coordinates);
+    }
+  };
+
+  walk(geometry);
+
+  return Number.isFinite(minX) ? [minX, minY, maxX, maxY] : null;
 }
 
 /** Собственная видимость узла дерева SDK (undefined — если SDK её не отдаёт). */
@@ -1043,6 +1129,16 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
    *
    * @param id — идентификатор слоя (overlayId в NGW)
    */
+  /** Лупа в карточке объекта: приближает карту к границам объекта. */
+  function handleZoomToItem(item: IdentifyItem) {
+    const bounds = getGeometryBounds(item.feature?.geometry ?? item.geometry);
+
+    if (!bounds) return;
+
+    // Для точки границы нулевые — карта приблизится до maxZoom
+    mapInstance.current?.fitBounds?.(bounds, { maxZoom: 17 });
+  }
+
   async function handleLayerToggle(id: string) {
     const map = mapInstance.current;
 
@@ -1077,10 +1173,29 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
       const bounds = map.getBounds?.();
       if (bounds) map.fitBounds?.(bounds);
 
+      // Обновляем галочки: сам слой/группа, включённые заодно группы-родители
+      // и все вложенные строки (их видимость зависит от групп)
       setLoadedLayers((currentLayers) =>
-        currentLayers.map((layer) =>
-          layer.id === id ? { ...layer, active: next } : layer,
-        ),
+        currentLayers.map((layer) => {
+          if (layer.id === id) return { ...layer, active: next };
+
+          if (next && parents.some((parent) => parent.id === layer.id)) {
+            return { ...layer, active: true };
+          }
+
+          const node = treeNodesRef.current[layer.id];
+          const effective =
+            layer.kind === "group"
+              ? getNodeVisibility(node)
+              : isTreeLayerVisible(
+                  node,
+                  treeParentsRef.current[layer.id] ?? [],
+                );
+
+          return effective === undefined
+            ? layer
+            : { ...layer, active: effective };
+        }),
       );
 
       return;
@@ -1952,6 +2067,120 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
     let onMeasureStart: (() => void) | undefined;
     let onMeasureFinish: (() => void) | undefined;
 
+    /**
+     * Кнопки инструментов. Создаются сразу после загрузки карты, независимо от слоёв и
+     * идентификации: иначе при долгом или упавшем запросе (например, целей идентификации)
+     * кнопки не появились бы вовсе.
+     */
+    async function setupTools(map: NgwMapInstance, lMap: LeafletMapLike) {
+      try {
+        // ──────────────────────────────────────────────────────────────────────
+        //  КНОПКИ ИНСТРУМЕНТОВ (только те, что включены для этой карты в админке)
+        // ──────────────────────────────────────────────────────────────────────
+
+        // Какие инструменты включены на этой карте — настраивается в админке
+        let toolIds: ToolId[] = [];
+
+        try {
+          const toolsResponse = await fetch(`/api/maps/${resourceId}/tools`, {
+            cache: "no-store",
+          });
+
+          if (!toolsResponse.ok) {
+            console.warn(
+              `Инструменты карты ${resourceId}: сервер ответил ${toolsResponse.status}`,
+            );
+          }
+
+          if (toolsResponse.ok) {
+            const data = (await toolsResponse.json()) as { tools?: unknown };
+            toolIds = Array.isArray(data.tools)
+              ? data.tools.filter(isKnownTool)
+              : [];
+          }
+        } catch (error) {
+          console.warn("Не удалось получить список инструментов карты:", error);
+        }
+
+        if (cancelled) return;
+
+        console.info(`Инструменты карты ${resourceId}:`, toolIds);
+
+        if (
+          toolIds.length > 0 &&
+          (!map.createToggleControl || !map.addControl)
+        ) {
+          console.warn(
+            "NgwMap не поддерживает createToggleControl/addControl — кнопки инструментов не создать",
+          );
+        }
+
+        // Измерения: готовый плагин leaflet-measure, добавляется прямо в Leaflet-карту
+        if (toolIds.includes("measureTool")) {
+          await import("leaflet");
+          await import("leaflet-measure");
+
+          const L = (window as unknown as { L?: LeafletGlobal }).L;
+
+          if (!cancelled && L?.control?.measure) {
+            measureControl = L.control.measure({
+              position: TOOLS_LEAFLET_POSITION,
+              primaryLengthUnit: "kilometers",
+              primaryAreaUnit: "hectares",
+              localization: "ru",
+            });
+            lMap.addControl?.(measureControl);
+
+            // На время измерения отключаем идентификацию объектов
+            onMeasureStart = () => {
+              measuringRef.current = true;
+              map.disableSelection?.();
+            };
+            onMeasureFinish = () => {
+              measuringRef.current = false;
+
+              if (activeToolRef.current !== "coordFromMapTool") {
+                map.enableSelection?.();
+              }
+            };
+
+            lMap.on("measurestart", onMeasureStart);
+            lMap.on("measurefinish", onMeasureFinish);
+          }
+        }
+
+        // Остальные инструменты: кнопки-переключатели NgwMap, панели рисует React
+        for (const toolId of toolIds) {
+          if (toolId === "measureTool") continue;
+
+          const meta = TOOL_META[toolId];
+
+          const control = map.createToggleControl?.({
+            getStatus: () => activeToolRef.current === toolId,
+            onClick: (status) =>
+              setActiveTool((previous) =>
+                status ? toolId : previous === toolId ? null : previous,
+              ),
+            html: meta.icon,
+            title: meta.title,
+            addClassOn: "ngw-tool-on",
+            addClassOff: "ngw-tool-off",
+          });
+
+          if (!control) continue;
+
+          const added = await map.addControl?.(control, TOOLS_NGW_POSITION);
+
+          if (cancelled) return;
+
+          toolControlsRef.current[toolId] =
+            added ?? (control as ToggleControlLike);
+        }
+      } catch (error) {
+        console.error("Ошибка создания инструментов карты:", error);
+      }
+    }
+
     async function init() {
       // Предотвращаем повторный запуск, если предыдущая инициализация ещё идёт
       if (initializingRef.current) {
@@ -2041,6 +2270,9 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         // Удаляем атрибуцию Leaflet (если не нужна)
         leafletMap.attributionControl?.remove();
 
+        // Кнопки инструментов — не ждём загрузки слоёв и целей идентификации
+        void setupTools(map, leafletMap);
+
         // ── Сбор базовых карт ──
         const baseLayersRaw = map.getBaseLayers?.() ?? [];
         baseLayersRef.current = baseLayersRaw;
@@ -2112,6 +2344,19 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
             };
           }),
         );
+
+        // Иерархия: группы и вложенность для сайдбара; группы тоже нужны для переключения
+        const rowParents: Record<string, SdkTreeNode[]> = {};
+        const treeRows = treeRoot
+          ? collectTreeRows(treeRoot, [], rowParents)
+          : [];
+
+        treeParentsRef.current = { ...treeParents, ...rowParents };
+
+        for (const row of treeRows) {
+          if (row.kind === "group")
+            treeNodesRef.current[row.node.id] = row.node;
+        }
 
         console.info(
           treeLayers.length > 0
@@ -2209,8 +2454,63 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
           /\p{L}/u.test(layer.name),
         );
 
+        // Строки списка: слои с группами и вложенностью (если в карте есть иерархия)
+        let nextRows: Layer[] = nextLayers;
+
+        if (treeRows.length > 0) {
+          const layerById = new Map(
+            nextLayers.map((layer) => [layer.id, layer] as const),
+          );
+          const rows: Layer[] = [];
+
+          for (const row of treeRows) {
+            if (row.kind === "layer") {
+              const layer = layerById.get(row.node.id);
+
+              if (layer) {
+                rows.push({
+                  ...layer,
+                  kind: "layer",
+                  depth: row.depth,
+                  parentId: row.parentId,
+                });
+              }
+            } else {
+              const raw = (row.node.item ?? {}) as unknown as Record<
+                string,
+                unknown
+              >;
+
+              rows.push({
+                id: row.node.id,
+                name: row.node.item?.display_name?.trim() || row.node.id,
+                active: getNodeVisibility(row.node) ?? true,
+                kind: "group",
+                depth: row.depth,
+                parentId: row.parentId,
+                expanded: raw.group_expanded !== false,
+              });
+            }
+          }
+
+          // Группы без слоёв внутри (например, отфильтрованных) не показываем
+          nextRows = rows.filter((row, index) => {
+            if (row.kind !== "group") return true;
+
+            for (
+              let i = index + 1;
+              i < rows.length && (rows[i].depth ?? 0) > (row.depth ?? 0);
+              i++
+            ) {
+              if (rows[i].kind !== "group") return true;
+            }
+
+            return false;
+          });
+        }
+
         if (!cancelled) {
-          setLoadedLayers(nextLayers);
+          setLoadedLayers(nextRows);
         }
 
         // ── Сохранение styleId для каждого overlay-слоя ──
@@ -2422,74 +2722,6 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         };
 
         map.emitter?.on?.("ngw:select", onNgwSelect);
-
-        // ──────────────────────────────────────────────────────────────────────
-        //  КНОПКИ ИНСТРУМЕНТОВ (только те, что заданы для этой карты в MAP_TOOLS)
-        // ──────────────────────────────────────────────────────────────────────
-
-        const toolIds = MAP_TOOLS[resourceId] ?? [];
-
-        // Измерения: готовый плагин leaflet-measure, добавляется прямо в Leaflet-карту
-        if (toolIds.includes("measureTool")) {
-          await import("leaflet");
-          await import("leaflet-measure");
-
-          const L = (window as unknown as { L?: LeafletGlobal }).L;
-
-          if (!cancelled && L?.control?.measure) {
-            measureControl = L.control.measure({
-              position: TOOLS_LEAFLET_POSITION,
-              primaryLengthUnit: "kilometers",
-              primaryAreaUnit: "hectares",
-              localization: "ru",
-            });
-            leafletMap.addControl?.(measureControl);
-
-            // На время измерения отключаем идентификацию объектов
-            onMeasureStart = () => {
-              measuringRef.current = true;
-              map.disableSelection?.();
-            };
-            onMeasureFinish = () => {
-              measuringRef.current = false;
-
-              if (activeToolRef.current !== "coordFromMapTool") {
-                map.enableSelection?.();
-              }
-            };
-
-            leafletMap.on("measurestart", onMeasureStart);
-            leafletMap.on("measurefinish", onMeasureFinish);
-          }
-        }
-
-        // Остальные инструменты: кнопки-переключатели NgwMap, панели рисует React
-        for (const toolId of toolIds) {
-          if (toolId === "measureTool") continue;
-
-          const meta = TOOL_META[toolId];
-
-          const control = map.createToggleControl?.({
-            getStatus: () => activeToolRef.current === toolId,
-            onClick: (status) =>
-              setActiveTool((previous) =>
-                status ? toolId : previous === toolId ? null : previous,
-              ),
-            html: meta.icon,
-            title: meta.title,
-            addClassOn: "ngw-tool-on",
-            addClassOff: "ngw-tool-off",
-          });
-
-          if (!control) continue;
-
-          const added = await map.addControl?.(control, TOOLS_NGW_POSITION);
-
-          if (cancelled) return;
-
-          toolControlsRef.current[toolId] =
-            added ?? (control as ToggleControlLike);
-        }
       } catch (error) {
         if (!cancelled) {
           console.error("Ошибка инициализации карты:", error);
@@ -2615,6 +2847,7 @@ export default function MapClient({ section, resourceId }: MapClientProps) {
         }
         onLayerToggle={handleLayerToggle}
         onClearFeature={handleClearFeature}
+        onZoomToItem={handleZoomToItem}
         onClose={() => setIsSidebarOpen(false)}
         fetchLegend={fetchLegend}
       />

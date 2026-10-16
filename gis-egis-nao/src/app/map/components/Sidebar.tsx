@@ -6,7 +6,7 @@ import IdentifyMedia, {
   IdentifyFieldValue,
   isMediaValue,
 } from "./IdentifyMedia";
-import type { Layer, IdentifyResult } from "../[name]/MapClient";
+import type { Layer, IdentifyItem, IdentifyResult } from "../[name]/MapClient";
 
 export interface LegendItem {
   icon?: string;
@@ -32,6 +32,8 @@ interface SidebarProps {
   onLayerToggle?: (id: string) => void | Promise<void>;
   onBasemapChange?: (id: string) => void;
   onClearFeature?: () => void;
+  /** Лупа в карточке объекта: приблизить карту к объекту */
+  onZoomToItem?: (item: IdentifyItem) => void;
   fetchLegend?: (layerId: string) => Promise<LegendItem[]>;
 }
 
@@ -45,6 +47,7 @@ export default function Sidebar({
   onLayerToggle,
   onBasemapChange,
   onClearFeature,
+  onZoomToItem,
   fetchLegend,
 }: SidebarProps) {
   const [openLegends, setOpenLegends] = useState<Record<string, boolean>>({});
@@ -53,12 +56,17 @@ export default function Sidebar({
     {},
   );
   const [activeTab, setActiveTab] = useState<"layers" | "basemaps">("layers");
+  // Свёрнутые/развёрнутые группы слоёв; пока не трогали — берём настройку из NGW (layer.expanded)
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     if (!fetchLegend || !isOpen || layers.length === 0) return;
 
     let cancelled = false;
-    const layerIds = layers.map((l) => l.id);
+    // Легенда есть только у слоёв, у групп её нет
+    const layerIds = layers.filter((l) => l.kind !== "group").map((l) => l.id);
 
     const loadAllLegends = async () => {
       await Promise.resolve();
@@ -104,6 +112,28 @@ export default function Sidebar({
   if (!isOpen) {
     return null;
   }
+
+  // Иерархия слоёв: строки внутри свёрнутой группы (на любом уровне) скрываем
+  const layerById = new Map(layers.map((layer) => [layer.id, layer] as const));
+  const hasGroups = layers.some((layer) => layer.kind === "group");
+
+  const isGroupCollapsed = (group: Layer) =>
+    collapsedGroups[group.id] ?? group.expanded === false;
+
+  const isRowHidden = (layer: Layer) => {
+    let parentId = layer.parentId;
+
+    while (parentId) {
+      const parent = layerById.get(parentId);
+      if (!parent) break;
+      if (isGroupCollapsed(parent)) return true;
+      parentId = parent.parentId;
+    }
+
+    return false;
+  };
+
+  const visibleLayers = layers.filter((layer) => !isRowHidden(layer));
 
   const featureCards = (selectedFeature?.items ?? []).map((item, index) => {
     const properties =
@@ -194,13 +224,54 @@ export default function Sidebar({
               key={card.key}
               className="flex flex-col gap-[6px] pb-[12px] border-b-[1px] border-black/10 last:border-b-0 last:pb-0"
             >
-              {card.layerName && (
-                <p className="text-[12px] text-gray-500">{card.layerName}</p>
-              )}
+              <div className="flex items-start justify-between gap-[8px]">
+                <div className="min-w-0 flex flex-col gap-[6px]">
+                  {card.layerName && (
+                    <p className="text-[12px] text-gray-500">
+                      {card.layerName}
+                    </p>
+                  )}
 
-              <h3 className="text-[16px] text-xs text-gray-500 break-words">
-                {card.name}
-              </h3>
+                  <h3 className="text-[16px] text-xs text-gray-500 break-words">
+                    {card.name}
+                  </h3>
+                </div>
+
+                {onZoomToItem &&
+                  Boolean(
+                    card.item.feature?.geometry ?? card.item.geometry,
+                  ) && (
+                    <button
+                      type="button"
+                      onClick={() => onZoomToItem(card.item)}
+                      className="shrink-0 text-gray-400 hover:text-accent transition-colors"
+                      title="Приблизить к объекту"
+                      aria-label="Приблизить к объекту"
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="11"
+                          cy="11"
+                          r="7"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        />
+                        <path
+                          d="M16.5 16.5L21 21"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  )}
+              </div>
 
               {card.fields.length > 0 && (
                 <div className="flex flex-col gap-[6px] mt-[4px]">
@@ -237,7 +308,9 @@ export default function Sidebar({
 
         <div className="grid grid-cols-2 gap-[8px]">
           <div className="flex shadow border-[2px] rounded-[12px] border-black/10 p-[12px] flex-col items-center justify-start">
-            <span className="text-title text-[18px]">{layers.length}</span>
+            <span className="text-title text-[18px]">
+              {layers.filter((layer) => layer.kind !== "group").length}
+            </span>
             <span className="text-footer text-[12px]">Слоёв</span>
           </div>
 
@@ -330,13 +403,66 @@ export default function Sidebar({
 
             <div className="p-[16px] text-wrap flex flex-col gap-[6px]">
               {layers.length > 0 ? (
-                layers.map((layer) => {
+                visibleLayers.map((layer) => {
+                  const depth = layer.depth ?? 0;
+
+                  // Группа: стрелка сворачивания + переключатель видимости группы
+                  if (layer.kind === "group") {
+                    const collapsed = isGroupCollapsed(layer);
+
+                    return (
+                      <div
+                        key={layer.id}
+                        className="flex items-center gap-[4px]"
+                        style={{ paddingLeft: depth * 16 }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCollapsedGroups((prev) => ({
+                              ...prev,
+                              [layer.id]: !collapsed,
+                            }))
+                          }
+                          className="text-gray-400 hover:text-gray-700 transition-colors w-[20px] h-[20px] flex items-center justify-center shrink-0"
+                          aria-label={
+                            collapsed ? "Развернуть группу" : "Свернуть группу"
+                          }
+                        >
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            aria-hidden="true"
+                            className={`transition-transform ${collapsed ? "" : "rotate-90"}`}
+                          >
+                            <path
+                              d="M4 2l4 4-4 4"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+
+                        <ButtonSidebar layer={layer} onToggle={handleToggle} />
+                      </div>
+                    );
+                  }
+
                   const layerLegend = legends[layer.id];
                   const hasLegend = layerLegend && layerLegend.length > 0;
                   const isLoading = loadingLegends[layer.id];
 
                   return (
-                    <div key={layer.id} className="flex flex-col">
+                    <div
+                      key={layer.id}
+                      className="flex flex-col"
+                      // Слои сдвигаем на уровень вложенности (+ ширину стрелки, если в карте есть группы)
+                      style={{ paddingLeft: depth * 16 + (hasGroups ? 24 : 0) }}
+                    >
                       <div className="flex items-center gap-[4px]">
                         <ButtonSidebar layer={layer} onToggle={handleToggle} />
                         {(hasLegend || isLoading) && (

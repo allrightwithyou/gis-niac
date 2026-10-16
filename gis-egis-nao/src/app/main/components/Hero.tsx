@@ -3,23 +3,25 @@
 import Cards from "./Cards";
 import Image from "next/image";
 import { useState } from "react";
-import { sectionData } from "@/app/main/data";
+import type { SectionData } from "@/app/lib/sections";
 import type { WebMap } from "./Card";
 
 type HeroProps = {
   webMaps: WebMap[];
+  /** Разделы из базы данных (редактируются в /admin) */
+  sections: SectionData[];
 };
 
-export default function Hero({ webMaps }: HeroProps) {
+export default function Hero({ webMaps, sections }: HeroProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [search, setText] = useState("");
 
-  const section = 12;
+  const section = sections.length;
   const dataUpdate = "29.09.2026";
   const objectMap = "4500+";
   const layersMap = "200+";
 
-  const filteredSections = sectionData.filter((section) => {
+  const filteredSections = sections.filter((section) => {
     const query = search.toLowerCase().trim();
 
     if (!query) {
