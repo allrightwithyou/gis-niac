@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ButtonSidebar from "./ButtonSidebar";
-import IdentifyMedia, {
-  IdentifyFieldValue,
-  isMediaValue,
-} from "./IdentifyMedia";
+import IdentifyMedia, { IdentifyFieldValue, isMediaValue } from "./IdentifyMedia";
 import type { Layer, IdentifyItem, IdentifyResult } from "../[name]/MapClient";
 
 export interface LegendItem {
@@ -17,6 +14,9 @@ export interface BasemapItem {
   id: string;
   name: string;
 }
+
+/** Длительность открытия и закрытия панели, мс (должна совпадать с duration-300 в классах ниже). */
+const SIDEBAR_ANIMATION_MS = 300;
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,6 +34,8 @@ interface SidebarProps {
   onClearFeature?: () => void;
   /** Лупа в карточке объекта: приблизить карту к объекту */
   onZoomToItem?: (item: IdentifyItem) => void;
+  /** Клик по объекту в списке: показать выделение именно на этом объекте на карте */
+  onSelectItem?: (item: IdentifyItem) => void;
   fetchLegend?: (layerId: string) => Promise<LegendItem[]>;
 }
 
@@ -48,6 +50,7 @@ export default function Sidebar({
   onBasemapChange,
   onClearFeature,
   onZoomToItem,
+  onSelectItem,
   fetchLegend,
 }: SidebarProps) {
   const [openLegends, setOpenLegends] = useState<Record<string, boolean>>({});
@@ -56,10 +59,35 @@ export default function Sidebar({
     {},
   );
   const [activeTab, setActiveTab] = useState<"layers" | "basemaps">("layers");
+
+  // Плавное открытие и закрытие. mounted — панель есть в DOM, shown — она «выехала».
+  // При открытии сначала монтируем панель в закрытом положении и через мгновение выдвигаем;
+  // при закрытии сначала задвигаем и лишь после анимации убираем из DOM
+  // (чтобы скрытая панель не держала загруженные камеры и фото).
+  const [mounted, setMounted] = useState(isOpen);
+  const [shown, setShown] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      const timer = setTimeout(() => setShown(true), 20);
+      return () => clearTimeout(timer);
+    }
+
+    setShown(false);
+    const timer = setTimeout(() => setMounted(false), SIDEBAR_ANIMATION_MS);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+  // Выбранный в списке объект: у него меняется фон и появляется лупа приближения.
+  // Новый результат идентификации сбрасывает выбор.
+  const [activeCardKey, setActiveCardKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveCardKey(null);
+  }, [selectedFeature]);
+
   // Свёрнутые/развёрнутые группы слоёв; пока не трогали — берём настройку из NGW (layer.expanded)
-  const [collapsedGroups, setCollapsedGroups] = useState<
-    Record<string, boolean>
-  >({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!fetchLegend || !isOpen || layers.length === 0) return;
@@ -109,7 +137,7 @@ export default function Sidebar({
     setOpenLegends((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
   };
 
-  if (!isOpen) {
+  if (!mounted) {
     return null;
   }
 
@@ -175,8 +203,17 @@ export default function Sidebar({
     };
   });
 
+  // Выбранный объект: по умолчанию первый (его же подсвечивает карта), дальше — по клику на карточку
+  const activeKey = activeCardKey ?? featureCards[0]?.key ?? null;
+
   return (
-    <aside className="w-[320px] bg-white shadow-xl flex flex-col border-black/10 h-sidebar overflow-hidden right-0 absolute z-[1000] top-[58px]">
+    <aside
+      aria-hidden={!shown}
+      inert={!shown}
+      className={`w-[370px] bg-white shadow-xl flex flex-col border-black/10 h-sidebar overflow-hidden right-0 absolute z-[1000] top-[58px] transition-[transform,visibility] duration-300 ease-in-out motion-reduce:transition-none ${
+        shown ? "translate-x-0 visible" : "translate-x-full invisible"
+      }`}
+    >
       {clickedCoordinates && (
         <div className="px-[16px] py-[10px] bg-gray-50 border-b border-gray-200 text-[13px] flex flex-col gap-[4px]">
           <span className="text-gray-500">Точка клика:</span>
@@ -190,7 +227,7 @@ export default function Sidebar({
       )}
 
       {selectedFeature && (
-        <div className="p-[16px] flex flex-col gap-[12px] border-b-[1px] border-black/10 max-h-[50%] overflow-y-auto">
+        <div className="p-[16px] flex flex-col gap-[12px] border-b-[1px] border-black/10 max-h-[50%] overflow-y-auto overflow-x-hidden">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500 uppercase tracking-wider">
               Объект
@@ -222,80 +259,88 @@ export default function Sidebar({
           {featureCards.map((card) => (
             <div
               key={card.key}
-              className="flex flex-col gap-[6px] pb-[12px] border-b-[1px] border-black/10 last:border-b-0 last:pb-0"
+              className="pb-[12px] border-b-[1px] border-black/10 last:border-b-0 last:pb-0"
             >
-              <div className="flex items-start justify-between gap-[8px]">
-                <div className="min-w-0 flex flex-col gap-[6px]">
-                  {card.layerName && (
-                    <p className="text-[12px] text-gray-500">
-                      {card.layerName}
-                    </p>
-                  )}
+              {/* Фон выбранного объекта — bg-bglogo; выступает на 8px за поля, текст остаётся на месте */}
+              <div
+                onClick={() => {
+                  if (activeKey === card.key) return;
 
-                  <h3 className="text-[16px] text-xs text-gray-500 break-words">
-                    {card.name}
-                  </h3>
-                </div>
+                  setActiveCardKey(card.key);
+                  onSelectItem?.(card.item); // выделение на карте переходит на этот объект
+                }}
+                className={`flex flex-col gap-[6px] -mx-[8px] px-[8px] py-[6px] rounded-[8px] transition-colors duration-200 ${
+                  activeKey === card.key
+                    ? "bg-bglogo"
+                    : featureCards.length > 1
+                      ? "cursor-pointer hover:bg-black/[3%]"
+                      : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-[8px]">
+                  <div className="min-w-0 flex flex-col gap-[6px]">
+                    {card.layerName && (
+                      <p className="text-[12px] text-gray-500">{card.layerName}</p>
+                    )}
 
-                {onZoomToItem &&
-                  Boolean(
-                    card.item.feature?.geometry ?? card.item.geometry,
-                  ) && (
-                    <button
-                      type="button"
-                      onClick={() => onZoomToItem(card.item)}
-                      className="shrink-0 text-gray-400 hover:text-accent transition-colors"
-                      title="Приблизить к объекту"
-                      aria-label="Приблизить к объекту"
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        aria-hidden="true"
+                    <h3 className="text-[16px] text-xs text-gray-500 break-words">
+                      {card.name}
+                    </h3>
+                  </div>
+
+                  {activeKey === card.key &&
+                    onZoomToItem &&
+                    Boolean(card.item.feature?.geometry ?? card.item.geometry) && (
+                      <button
+                        type="button"
+                        onClick={() => onZoomToItem(card.item)}
+                        className="shrink-0 text-gray-400 hover:text-accent transition-colors"
+                        title="Приблизить к объекту"
+                        aria-label="Приблизить к объекту"
                       >
-                        <circle
-                          cx="11"
-                          cy="11"
-                          r="7"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d="M16.5 16.5L21 21"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-                  )}
-              </div>
-
-              {card.fields.length > 0 && (
-                <div className="flex flex-col gap-[6px] mt-[4px]">
-                  {card.fields.map((field) => (
-                    <div
-                      key={field.key}
-                      className="flex justify-between gap-[12px] text-[13px]"
-                    >
-                      <span className="text-gray-500 capitalize">
-                        {field.key}
-                      </span>
-                      <span className="text-gray-900 font-medium text-right break-words">
-                        <IdentifyFieldValue
-                          value={field.value}
-                          properties={card.rawProperties}
-                        />
-                      </span>
-                    </div>
-                  ))}
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                          <path
+                            d="M16.5 16.5L21 21"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
                 </div>
-              )}
 
-              {/* Фото из bgstorage (одно или несколько) и онлайн-камера */}
-              <IdentifyMedia item={card.item} />
+                {card.fields.length > 0 && (
+                  <div className="flex flex-col gap-[6px] mt-[4px]">
+                    {card.fields.map((field) => (
+                      <div
+                        key={field.key}
+                        className="flex justify-between gap-[12px] text-[13px]"
+                      >
+                        <span className="text-gray-500 capitalize">
+                          {field.key}
+                        </span>
+                        <span className="text-gray-900 font-medium text-right break-words">
+                          <IdentifyFieldValue
+                            value={field.value}
+                            properties={card.rawProperties}
+                          />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Фото из bgstorage (одно или несколько) и онлайн-камера */}
+                <IdentifyMedia item={card.item} />
+              </div>
             </div>
           ))}
         </div>
@@ -391,7 +436,7 @@ export default function Sidebar({
       </div>
 
       {/* ───── Содержимое вкладок ───── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {/* Вкладка: Слои */}
         {activeTab === "layers" && (
           <>
@@ -419,15 +464,10 @@ export default function Sidebar({
                         <button
                           type="button"
                           onClick={() =>
-                            setCollapsedGroups((prev) => ({
-                              ...prev,
-                              [layer.id]: !collapsed,
-                            }))
+                            setCollapsedGroups((prev) => ({ ...prev, [layer.id]: !collapsed }))
                           }
                           className="text-gray-400 hover:text-gray-700 transition-colors w-[20px] h-[20px] flex items-center justify-center shrink-0"
-                          aria-label={
-                            collapsed ? "Развернуть группу" : "Свернуть группу"
-                          }
+                          aria-label={collapsed ? "Развернуть группу" : "Свернуть группу"}
                         >
                           <svg
                             width="12"

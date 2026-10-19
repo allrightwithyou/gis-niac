@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -18,6 +19,10 @@ const nextConfig: NextConfig = {
     },
   },
 
+  env: {
+    NEXT_PUBLIC_NGW_BASE_URL:
+      process.env.NEXT_PUBLIC_NGW_BASE_URL || "/ngw-proxy",
+  },
 };
 
 export default nextConfig;

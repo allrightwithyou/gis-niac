@@ -1,10 +1,10 @@
-// Переносит новости из текстового файла (geoportal.news) в базу.
-// Формат строки:  Заголовок | дд.мм.гггг | Текст (можно с HTML-ссылками <a href="...">...</a>)
-// HTML-ссылки и простое оформление превращаются в Markdown. Печатает SQL в стандартный вывод,
-// предупреждения — в стандартный вывод ошибок. Повторный запуск безопасен: уже перенесённые
-// новости (тот же заголовок и дата) не дублируются.
+// Переносит новости из текстового файла (gisnao.news) в базу.
+// Формат строки:  Категория | дд.мм.гггг | Текст (HTML-ссылки <a href="...">...</a> допустимы)
+// Текст переносится как есть: на сайте его очищает ваш NewsCard (DOMPurify).
+// Печатает SQL в стандартный вывод, предупреждения — в стандартный вывод ошибок.
+// Повторный запуск безопасен: уже перенесённые новости (та же категория, дата и текст) не дублируются.
 //
-// Запуск в одноразовом контейнере Node (на ВМ Node ставить не нужно) — см. инструкцию.
+// Запуск в одноразовом контейнере Node (на сервере Node ставить не нужно) — см. README.
 
 import { readFile } from "node:fs/promises";
 
@@ -14,45 +14,19 @@ const raw = (await readFile(file, "utf8")).replace(/^\uFEFF/, "");
 const q = (value) => "'" + String(value).replace(/'/g, "''") + "'";
 const warn = (message) => console.error("ВНИМАНИЕ: " + message);
 
-/** Простое HTML-оформление из файла → Markdown. */
-function htmlToMarkdown(html) {
-  let text = html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
-    .replace(/<\/?p[^>]*>/gi, "")
-    // ссылки: <a href="..." target="...">текст</a> → [текст](адрес)
-    .replace(/<a\s+[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) => {
-      const clean = label.replace(/<[^>]+>/g, "").trim() || href;
-      return `[${clean}](${href.replace(/\)/g, "%29").replace(/\s/g, "%20")})`;
-    })
-    .replace(/<(b|strong)>([\s\S]*?)<\/\1>/gi, "**$2**")
-    .replace(/<(i|em)>([\s\S]*?)<\/\1>/gi, "*$2*");
-
-  const leftover = text.match(/<\/?[a-z][^>]*>/gi);
-  if (leftover) warn(`остались HTML-теги: ${[...new Set(leftover)].join(" ")}`);
-
-  return text
-    .replace(/&nbsp;/g, " ")
-    .replace(/&laquo;/g, "«")
-    .replace(/&raquo;/g, "»")
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, "&")
-    .trim();
-}
-
 const items = [];
 
 raw.split(/\r?\n/).forEach((line, index) => {
   if (!line.trim() || line.trim().startsWith("#")) return;
 
   const parts = line.split("|");
-  const title = parts[0]?.trim() ?? "";
+  const category = parts[0]?.trim() ?? "";
   const dateText = parts[1]?.trim() ?? "";
-  const body = parts.slice(2).join("|").trim();
+  const body = parts.slice(2).join("|").trim(); // в тексте допустим символ «|»
   const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(dateText);
 
-  if (!title || !match || !body) {
-    warn(`строка ${index + 1} пропущена (нужно «Заголовок | дд.мм.гггг | Текст»): ${line.slice(0, 80)}`);
+  if (!category || !match || !body) {
+    warn(`строка ${index + 1} пропущена (нужно «Категория | дд.мм.гггг | Текст»): ${line.slice(0, 80)}`);
     return;
   }
 
@@ -64,7 +38,7 @@ raw.split(/\r?\n/).forEach((line, index) => {
     return;
   }
 
-  items.push({ title, iso, body: htmlToMarkdown(body) });
+  items.push({ category, iso, body });
 });
 
 // Если в файле новости идут от новых к старым, вставляем в обратном порядке:
@@ -78,8 +52,8 @@ const lines = [
 
 for (const item of items) {
   lines.push(
-    `insert into news (title, published_at, body) select ${q(item.title)}, ${q(item.iso)}, ${q(item.body)} ` +
-      `where not exists (select 1 from news where title = ${q(item.title)} and published_at = ${q(item.iso)});`,
+    `insert into news (category, published_at, body) select ${q(item.category)}, ${q(item.iso)}, ${q(item.body)} ` +
+      `where not exists (select 1 from news where category = ${q(item.category)} and published_at = ${q(item.iso)} and body = ${q(item.body)});`,
   );
 }
 

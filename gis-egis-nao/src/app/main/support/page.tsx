@@ -8,7 +8,7 @@ export default async function SupportPage() {
       <div className="max-w-[1400px] w-full flex flex-col gap-[34px]">
         <Link
           href="/main/"
-          className="flex gap-[6px] pr-[12px] flex-row items-center border-r-[1px] border-margin "
+          className="flex gap-[6px] pr-[12px] flex-row items-center border-margin "
         >
           <Image
             className="block"
@@ -22,12 +22,12 @@ export default async function SupportPage() {
           </span>
         </Link>
         <div>
-          <span className="shadow-md  uppercase text-accent text-[12px] rounded-full py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
+          <span className="shadow-md uppercase text-accent text-[12px] rounded-full py-[4px] px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
             Служба поддержки
           </span>
         </div>
         <div className="flex flex-col gap-[15px]">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl">Центр поддержки</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl text-title">Центр поддержки</h1>
           <p className="text-balance text-hero text-sm sm:text-base">
             Поможем решить технический вопрос, найти нужные данные или получить
             доступ к сервисам ЕГИС НАО.

@@ -11,7 +11,7 @@ export default function SystemPage() {
       <div className="max-w-[1400px] w-full flex flex-col gap-[34px]">
         <Link
           href="/main/"
-          className="flex gap-[6px] pr-[12px] flex-row items-center border-r-[1px] border-margin "
+          className="flex gap-[6px] pr-[12px] flex-row items-center border-margin "
         >
           <Image
             className="block"
@@ -95,7 +95,7 @@ export default function SystemPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-title text-[16px]">Единый каталог</span>
-                <span className="text-hero text-[12px]">
+                <span className="text-hero text-[13px]">
                   Централизованное хранение пространственных данных органов
                   власти и подведомственных организаций.
                 </span>
@@ -109,7 +109,7 @@ export default function SystemPage() {
                 <span className="text-title text-[16px]">
                   Аналитика территорий
                 </span>
-                <span className="text-hero text-[12px]">
+                <span className="text-hero text-[13px]">
                   Сопоставление тематических слоев для принятия обоснованных
                   управленческих решений.
                 </span>
@@ -121,7 +121,7 @@ export default function SystemPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-title text-[16px]">Открытые данные</span>
-                <span className="text-hero text-[12px]">
+                <span className="text-hero text-[13px]">
                   Публикация доступных сведений для жителей, бизнеса,
                   исследователей и проектных организаций.
                 </span>
@@ -135,7 +135,7 @@ export default function SystemPage() {
                 <span className="text-title text-[16px]">
                   Межведомственный обмен
                 </span>
-                <span className="text-hero text-[12px]">
+                <span className="text-hero text-[13px]">
                   Актуальные сведения без дублирования запросов и разрозненных
                   файловых архивов.
                 </span>

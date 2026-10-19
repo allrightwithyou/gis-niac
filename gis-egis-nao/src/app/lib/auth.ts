@@ -10,7 +10,7 @@
 Подделать его без SESSION_SECRET нельзя; срок жизни проверяется при каждом запросе.
  */
 export const SESSION_COOKIE = "admin_session";
-export const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 часов
+export const SESSION_TTL_SECONDS = 60 * 60 * 1; // 8 часов
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 function toBase64Url(bytes: Uint8Array): string {

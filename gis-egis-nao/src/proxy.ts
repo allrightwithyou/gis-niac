@@ -6,7 +6,7 @@ import { SESSION_COOKIE, verifySessionToken } from "./app/lib/auth";
  * 2) /admin/* и /api/admin/* — доступ только с действующей сессией администратора
  *    (кроме страницы и API входа).
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (pathname.startsWith("/ngw-proxy")) {
     const target = process.env.NGW_BASE_URL?.replace(/\/$/, "");
@@ -17,9 +17,12 @@ export async function middleware(request: NextRequest) {
       new URL(target + pathname.replace(/^\/ngw-proxy/, "") + search),
     );
   }
-  const isLogin = pathname === "/admin/login" || pathname === "/api/admin/login";
+  const isLogin =
+    pathname === "/admin/login" || pathname === "/api/admin/login";
   if (!isLogin) {
-    const authorized = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+    const authorized = await verifySessionToken(
+      request.cookies.get(SESSION_COOKIE)?.value,
+    );
     if (!authorized) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "Требуется вход" }, { status: 401 });

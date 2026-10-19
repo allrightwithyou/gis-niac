@@ -23,6 +23,8 @@ interface AdminSection {
 interface ServerData {
   sections: Array<Omit<AdminSection, "key">>;
   tools: Record<string, string[]>;
+  /** ID карт, у которых задан пароль */
+  protectedMaps?: number[];
 }
 
 interface NgwMapInfo {
@@ -48,7 +50,7 @@ function move<T>(items: T[], index: number, delta: -1 | 1): T[] {
   return copy;
 }
 
-function toState(data: ServerData): { sections: AdminSection[]; tools: ToolsState } {
+function toState(data: ServerData): { sections: AdminSection[]; tools: ToolsState; protectedMaps: number[] } {
   const tools: ToolsState = {};
 
   for (const [key, value] of Object.entries(data.tools)) {
@@ -58,6 +60,7 @@ function toState(data: ServerData): { sections: AdminSection[]; tools: ToolsStat
   return {
     sections: data.sections.map((section) => ({ ...section, key: `s${section.id}` })),
     tools,
+    protectedMaps: data.protectedMaps ?? [],
   };
 }
 
@@ -66,6 +69,9 @@ export default function AdminEditor() {
 
   const [sections, setSections] = useState<AdminSection[]>([]);
   const [tools, setTools] = useState<ToolsState>({});
+  // Пароли карт: у каких карт задан, и открытая сейчас форма ввода пароля
+  const [protectedMaps, setProtectedMaps] = useState<number[]>([]);
+  const [passwordEditor, setPasswordEditor] = useState<{ resourceId: number; value: string } | null>(null);
   const [ngwMaps, setNgwMaps] = useState<NgwMapInfo[]>([]);
   const [mapsError, setMapsError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -100,6 +106,7 @@ export default function AdminEditor() {
 
         setSections(next.sections);
         setTools(next.tools);
+        setProtectedMaps(next.protectedMaps);
         setSelectedKey(next.sections[0]?.key ?? null);
 
         if (mapsResponse.ok) {
@@ -177,6 +184,45 @@ export default function AdminEditor() {
     setMessage(null);
   }
 
+  /** Пароль карты сохраняется сразу (отдельно от кнопки «Сохранить»), он не зависит от разделов. */
+  async function savePassword() {
+    if (!passwordEditor) return;
+
+    const response = await fetch(`/api/admin/maps/${passwordEditor.resourceId}/password`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: passwordEditor.value }),
+    });
+
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response.ok) {
+      setMessage({ text: data?.error ?? "Не удалось задать пароль", error: true });
+      return;
+    }
+
+    setProtectedMaps((current) =>
+      current.includes(passwordEditor.resourceId) ? current : [...current, passwordEditor.resourceId],
+    );
+    setPasswordEditor(null);
+    setMessage({ text: "Пароль карты сохранён", error: false });
+  }
+
+  async function removePassword(resourceId: number) {
+    if (!window.confirm("Снять пароль? Карта станет доступна всем без пароля.")) return;
+
+    const response = await fetch(`/api/admin/maps/${resourceId}/password`, { method: "DELETE" });
+
+    if (!response.ok) {
+      setMessage({ text: "Не удалось снять пароль", error: true });
+      return;
+    }
+
+    setProtectedMaps((current) => current.filter((id) => id !== resourceId));
+    setPasswordEditor(null);
+    setMessage({ text: "Пароль снят", error: false });
+  }
+
   async function save() {
     setSaving(true);
     setMessage(null);
@@ -221,6 +267,7 @@ export default function AdminEditor() {
 
       setSections(next.sections);
       setTools(next.tools);
+      setProtectedMaps(next.protectedMaps);
       setSelectedKey(next.sections[index]?.key ?? next.sections[0]?.key ?? null);
       setDirty(false);
       setMessage({ text: "Сохранено", error: false });
@@ -392,9 +439,42 @@ export default function AdminEditor() {
                     <div className="flex shrink-0 gap-[4px]">
                       <button className={buttonClass} disabled={index === 0} onClick={() => editSelected({ maps: move(selected.maps, index, -1) })}>↑</button>
                       <button className={buttonClass} disabled={index === selected.maps.length - 1} onClick={() => editSelected({ maps: move(selected.maps, index, 1) })}>↓</button>
+                      <button
+                        className={buttonClass}
+                        title="Пароль для входа на эту карту"
+                        onClick={() =>
+                          setPasswordEditor(passwordEditor?.resourceId === resourceId ? null : { resourceId, value: "" })
+                        }
+                      >
+                        {protectedMaps.includes(resourceId) ? "🔒 Пароль задан" : "Пароль"}
+                      </button>
                       <button className={buttonClass} onClick={() => editSelected({ maps: selected.maps.filter((id) => id !== resourceId) })}>Убрать</button>
                     </div>
                   </div>
+
+                  {/* Пароль карты: посетитель увидит форму ввода пароля вместо карты */}
+                  {passwordEditor?.resourceId === resourceId && (
+                    <div className="mt-[8px] flex flex-wrap items-center gap-[6px] rounded-[8px] bg-gray-50 p-[8px]">
+                      <input
+                        className={`${inputClass} max-w-[240px]`}
+                        placeholder={protectedMaps.includes(resourceId) ? "Новый пароль" : "Пароль (не короче 4 символов)"}
+                        autoComplete="off"
+                        value={passwordEditor.value}
+                        onChange={(e) => setPasswordEditor({ resourceId, value: e.target.value })}
+                      />
+                      <button className={buttonClass} disabled={passwordEditor.value.length < 4} onClick={() => void savePassword()}>
+                        Сохранить пароль
+                      </button>
+                      {protectedMaps.includes(resourceId) && (
+                        <button className={buttonClass} onClick={() => void removePassword(resourceId)}>
+                          Снять пароль
+                        </button>
+                      )}
+                      <button className={buttonClass} onClick={() => setPasswordEditor(null)}>
+                        Отмена
+                      </button>
+                    </div>
+                  )}
 
                   {/* Инструменты этой карты (настройка общая для карты во всех разделах) */}
                   <div className="mt-[8px] flex flex-wrap gap-[6px]">

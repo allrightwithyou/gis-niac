@@ -1,0 +1,63 @@
+# Портал: приложение Next.js + PostgreSQL.
+# Запуск из корня проекта:
+#   set -a; . ./.env; set +a
+#   podman-compose up -d --build
+#
+# Секреты (пароли, SESSION_SECRET) берутся из файла .env при ЗАПУСКЕ и в образ не попадают.
+services:
+  nextjs:
+    build:
+      context: .
+      args:
+        # Нужно при СБОРКЕ: NEXT_PUBLIC_* вшивается в клиентский код.
+        # Если переменная не задана, берётся значение после «:-».
+        NEXT_PUBLIC_NGW_BASE_URL: ${NEXT_PUBLIC_NGW_BASE_URL:-/ngw-proxy}
+    container_name: test-nextgis
+    ports:
+      # Только локальный адрес: наружу сайт отдаёт Angie (proxy_pass на localhost:3011)
+      - "127.0.0.1:3011:3011"
+    restart: always
+    depends_on:
+      - db
+    # Все переменные из .env попадают в контейнер автоматически
+    # (ADMIN_LOGIN, ADMIN_PASSWORD, SESSION_SECRET, NGW_BASE_URL и любые новые)
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      # Адрес базы: хост «db» — имя сервиса ниже; пароль берётся из DB_PASSWORD
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/gis_portal
+    healthcheck:
+      # Страница входа не обращается к базе — проверяем, что сервер отвечает
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3011/admin/login || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  db:
+    image: docker.io/library/postgres:16
+    container_name: gis-pg
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: gis_portal
+      TZ: Europe/Moscow
+    # Порт наружу не публикуем: приложение обращается к базе по имени «db» внутри сети.
+    # Для отладки с хоста раскомментируйте:
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+    volumes:
+      - gis-pg-data:/var/lib/postgresql/data
+      # Таблицы и разделы создаются автоматически при первом запуске на пустом томе
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gis_portal"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  gis-pg-data:

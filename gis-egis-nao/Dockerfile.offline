@@ -1,0 +1,37 @@
+# Пересборка БЕЗ интернета: берём уже собранный образ (в нём лежат node_modules с прошлой сборки),
+# заменяем исходники и заново выполняем только `yarn build`. `yarn install` не запускается.
+#
+# Использование (на сервере, в корне проекта):
+#   podman tag gis-egis-nao_nextjs gis-nextjs-base
+#   podman build --network=none -f Dockerfile.offline -t gis-egis-nao_nextjs \
+#       --build-arg NEXT_PUBLIC_NGW_BASE_URL=/ngw-proxy .
+#   podman-compose down && podman-compose up -d
+#
+# Условие: с момента последней успешной сборки не добавлялись новые пакеты в package.json.
+FROM gis-nextjs-base
+
+WORKDIR /app
+
+# Новые исходники поверх старых. node_modules и .next, .env в контекст не попадают (.dockerignore),
+# поэтому установленные зависимости в образе не затираются.
+COPY . .
+
+ARG NEXT_PUBLIC_NGW_BASE_URL
+ENV NEXT_PUBLIC_NGW_BASE_URL=$NEXT_PUBLIC_NGW_BASE_URL
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS=--use-system-ca
+
+# Сборка заново: папки .next и .next/standalone создаются целиком
+RUN yarn build
+
+RUN cp -r .next/static .next/standalone/.next/static
+RUN cp -r public .next/standalone/public
+
+ENV NODE_ENV=production
+ENV PORT=3011
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 3011
+
+CMD ["node", ".next/standalone/server.js"]

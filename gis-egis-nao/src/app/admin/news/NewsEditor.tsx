@@ -39,7 +39,11 @@ const toForm = (item: NewsItem): FormState => ({
 });
 
 /** Текст без HTML-тегов — для краткого вида в списке. */
-const plain = (html: string) => html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+const plain = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 export default function NewsEditor() {
   const router = useRouter();
@@ -49,7 +53,10 @@ export default function NewsEditor() {
   const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    error: boolean;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,23 +70,44 @@ export default function NewsEditor() {
           return;
         }
 
-        const data = (await response.json().catch(() => null)) as
-          | NewsItem[]
-          | { error?: string }
-          | null;
+        // Ответ читаем как текст: если это не список новостей, покажем, что именно пришло
+        const text = await response.text();
+        let data: unknown = null;
+
+        try {
+          data = JSON.parse(text);
+        } catch {
+          // не JSON — подробности покажем ниже
+        }
 
         if (!response.ok || !Array.isArray(data)) {
-          const text = !Array.isArray(data) && data?.error ? data.error : `Сервер ответил ${response.status}`;
-          if (!cancelled) setMessage({ text: `Не удалось загрузить новости: ${text}`, error: true });
+          const apiError =
+            typeof data === "object" && data !== null && "error" in data
+              ? String((data as { error: unknown }).error)
+              : null;
+
+          const details =
+            apiError ??
+            `ответ ${response.status}, ${response.headers.get("content-type") ?? "без типа"}: ${text
+              .slice(0, 120)
+              .replace(/\s+/g, " ")}`;
+
+          if (!cancelled)
+            setMessage({
+              text: `Не удалось загрузить новости: ${details}`,
+              error: true,
+            });
           return;
         }
 
         if (!cancelled) {
-          setItems(data);
-          if (data[0]) setForm(toForm(data[0]));
+          const list = data as NewsItem[];
+          setItems(list);
+          if (list[0]) setForm(toForm(list[0]));
         }
       } catch {
-        if (!cancelled) setMessage({ text: "Нет связи с сервером", error: true });
+        if (!cancelled)
+          setMessage({ text: "Нет связи с сервером", error: true });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -97,7 +125,11 @@ export default function NewsEditor() {
   }
 
   function select(item: NewsItem | null) {
-    if (dirty && !window.confirm("Есть несохранённые изменения. Перейти без сохранения?")) return;
+    if (
+      dirty &&
+      !window.confirm("Есть несохранённые изменения. Перейти без сохранения?")
+    )
+      return;
 
     setForm(item ? toForm(item) : emptyForm());
     setDirty(false);
@@ -110,26 +142,34 @@ export default function NewsEditor() {
 
     try {
       const isNew = form.id === null;
-      const response = await fetch(isNew ? "/api/admin/news" : `/api/admin/news/${form.id}`, {
-        method: isNew ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: form.category,
-          date: form.date,
-          body: form.body,
-          published: form.published,
-        }),
-      });
+      const response = await fetch(
+        isNew ? "/api/admin/news" : `/api/admin/news/${form.id}`,
+        {
+          method: isNew ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: form.category,
+            date: form.date,
+            body: form.body,
+            published: form.published,
+          }),
+        },
+      );
 
       if (response.status === 401) {
         router.push("/admin/login");
         return;
       }
 
-      const data = (await response.json().catch(() => null)) as (NewsItem & { error?: string }) | null;
+      const data = (await response.json().catch(() => null)) as
+        | (NewsItem & { error?: string })
+        | null;
 
       if (!response.ok || !data || data.error) {
-        setMessage({ text: data?.error ?? "Не удалось сохранить", error: true });
+        setMessage({
+          text: data?.error ?? "Не удалось сохранить",
+          error: true,
+        });
         return;
       }
 
@@ -141,7 +181,10 @@ export default function NewsEditor() {
       );
       setForm(toForm(data));
       setDirty(false);
-      setMessage({ text: isNew ? "Новость добавлена" : "Сохранено", error: false });
+      setMessage({
+        text: isNew ? "Новость добавлена" : "Сохранено",
+        error: false,
+      });
     } catch {
       setMessage({ text: "Нет связи с сервером", error: true });
     } finally {
@@ -152,7 +195,9 @@ export default function NewsEditor() {
   async function remove() {
     if (form.id === null || !window.confirm("Удалить эту новость?")) return;
 
-    const response = await fetch(`/api/admin/news/${form.id}`, { method: "DELETE" });
+    const response = await fetch(`/api/admin/news/${form.id}`, {
+      method: "DELETE",
+    });
 
     if (!response.ok) {
       setMessage({ text: "Не удалось удалить", error: true });
@@ -173,14 +218,18 @@ export default function NewsEditor() {
   }
 
   if (loading) {
-    return <main className="p-[24px] text-[14px] text-gray-500">Загрузка…</main>;
+    return (
+      <main className="p-[24px] text-[14px] text-gray-500">Загрузка…</main>
+    );
   }
 
   // Подсказки категорий: уже использованные
   const categories = [...new Set(items.map((item) => item.category))];
 
   // Предпросмотр рисует настоящий NewsCard (тот же вид, что на сайте); он ждёт дату «дд.мм.гггг»
-  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(form.date) && !Number.isNaN(Date.parse(form.date));
+  const dateValid =
+    /^\d{4}-\d{2}-\d{2}$/.test(form.date) &&
+    !Number.isNaN(Date.parse(form.date));
   const previewNews = {
     id: form.id ?? items.length + 1,
     category: form.category || "Категория",
@@ -200,18 +249,28 @@ export default function NewsEditor() {
 
         <div className="flex items-center gap-[12px]">
           {message && (
-            <span className={`text-[13px] ${message.error ? "text-red-600" : "text-green-600"}`}>
+            <span
+              className={`text-[13px] ${message.error ? "text-red-600" : "text-green-600"}`}
+            >
               {message.text}
             </span>
           )}
-          {dirty && !message && <span className="text-[13px] text-gray-500">Есть несохранённые изменения</span>}
+          {dirty && !message && (
+            <span className="text-[13px] text-gray-500">
+              Есть несохранённые изменения
+            </span>
+          )}
 
           <button
             onClick={() => void save()}
             disabled={!dirty || saving}
             className="rounded-[8px] bg-accent px-[16px] py-[6px] text-[13px] font-medium text-white disabled:opacity-50"
           >
-            {saving ? "Сохраняем…" : form.id === null ? "Добавить" : "Сохранить"}
+            {saving
+              ? "Сохраняем…"
+              : form.id === null
+                ? "Добавить"
+                : "Сохранить"}
           </button>
           <button onClick={() => void logout()} className={buttonClass}>
             Выйти
@@ -222,11 +281,16 @@ export default function NewsEditor() {
       <div className="mx-auto grid max-w-[1200px] grid-cols-[320px_1fr] gap-[24px] p-[24px]">
         {/* Список новостей */}
         <aside className="flex flex-col gap-[8px]">
-          <button onClick={() => select(null)} className={`${buttonClass} py-[8px]`}>
+          <button
+            onClick={() => select(null)}
+            className={`${buttonClass} py-[8px]`}
+          >
             + Новая новость
           </button>
 
-          {items.length === 0 && <p className="text-[13px] text-gray-500">Новостей пока нет.</p>}
+          {items.length === 0 && (
+            <p className="text-[13px] text-gray-500">Новостей пока нет.</p>
+          )}
 
           {items.map((item) => (
             <div
@@ -238,9 +302,13 @@ export default function NewsEditor() {
             >
               <div className="text-[11px] text-gray-500">
                 {formatNewsDate(item.date)} · {item.category}
-                {!item.published && <span className="ml-[6px] text-amber-600">скрыта</span>}
+                {!item.published && (
+                  <span className="ml-[6px] text-amber-600">скрыта</span>
+                )}
               </div>
-              <div className={`line-clamp-2 text-[13px] ${item.published ? "" : "text-gray-400"}`}>
+              <div
+                className={`line-clamp-2 text-[13px] ${item.published ? "" : "text-gray-400"}`}
+              >
                 {plain(item.body)}
               </div>
             </div>
@@ -267,7 +335,12 @@ export default function NewsEditor() {
             </label>
             <label className="flex flex-col gap-[4px] text-[12px] text-gray-500">
               Дата
-              <input type="date" className={inputClass} value={form.date} onChange={(e) => edit({ date: e.target.value })} />
+              <input
+                type="date"
+                className={inputClass}
+                value={form.date}
+                onChange={(e) => edit({ date: e.target.value })}
+              />
             </label>
           </div>
 
@@ -280,27 +353,39 @@ export default function NewsEditor() {
               onChange={(e) => edit({ body: e.target.value })}
             />
             <span className="text-[11px] text-gray-400">
-              Ссылка, как в прежнем файле: {`<a href="https://адрес" target="_self">ссылка</a>`}
+              Ссылка, как в прежнем файле:{" "}
+              {`<a href="https://адрес" target="_self">ссылка</a>`}
             </span>
           </label>
 
           <label className="flex items-center gap-[8px] text-[13px]">
-            <input type="checkbox" checked={form.published} onChange={(e) => edit({ published: e.target.checked })} />
+            <input
+              type="checkbox"
+              checked={form.published}
+              onChange={(e) => edit({ published: e.target.checked })}
+            />
             Показывать на сайте
           </label>
 
           <div>
-            <div className="mb-[6px] text-[12px] text-gray-500">Предпросмотр (так карточка выглядит на сайте)</div>
+            <div className="mb-[6px] text-[12px] text-gray-500">
+              Предпросмотр (так карточка выглядит на сайте)
+            </div>
             {dateValid ? (
               <NewsCard news={previewNews} />
             ) : (
-              <p className="text-[12px] text-amber-600">Укажите корректную дату, чтобы увидеть предпросмотр.</p>
+              <p className="text-[12px] text-amber-600">
+                Укажите корректную дату, чтобы увидеть предпросмотр.
+              </p>
             )}
           </div>
 
           {form.id !== null && (
             <div>
-              <button onClick={() => void remove()} className="text-[12px] text-red-600 hover:underline">
+              <button
+                onClick={() => void remove()}
+                className="text-[12px] text-red-600 hover:underline"
+              >
                 Удалить новость
               </button>
             </div>

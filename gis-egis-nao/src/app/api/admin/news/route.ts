@@ -1,10 +1,9 @@
-// ПУТЬ В ПРОЕКТЕ: src/app/api/admin/news/route.ts
 // GET /api/admin/news — все новости; POST /api/admin/news — создать (только админ)
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { isAdmin } from "@/app/lib/admin-session";
-import { describeDbError, pool } from "@/app/lib/db";
+import { pool } from "@/app/lib/db";
 import { getAllNews, getNewsById } from "@/app/lib/news-db";
 import { parseNewsInput } from "@/app/lib/news-validate";
 
@@ -19,7 +18,7 @@ export async function GET() {
     return NextResponse.json(await getAllNews());
   } catch (error) {
     console.error("Не удалось прочитать новости:", error);
-    return NextResponse.json({ error: describeDbError(error) }, { status: 500 });
+    return NextResponse.json( { status: 500 });
   }
 }
 
@@ -36,9 +35,9 @@ export async function POST(request: Request) {
 
   try {
     const { rows } = await pool.query<{ id: number }>(
-      `insert into news (title, published_at, body, published)
+      `insert into news (category, published_at, body, published)
        values ($1, $2, $3, $4) returning id`,
-      [parsed.title, parsed.date, parsed.body, parsed.published],
+      [parsed.category, parsed.date, parsed.body, parsed.published],
     );
 
     revalidatePath("/main/news");
@@ -46,6 +45,6 @@ export async function POST(request: Request) {
     return NextResponse.json(await getNewsById(rows[0].id), { status: 201 });
   } catch (error) {
     console.error("Не удалось создать новость:", error);
-    return NextResponse.json({ error: describeDbError(error) }, { status: 500 });
+    return NextResponse.json( { status: 500 });
   }
 }

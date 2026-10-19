@@ -1,0 +1,5 @@
+262: ["coordTool", "coordFromMapTool", "fishTool"],
+  579: ["ecomonTool", "coordTool", "coordFromMapTool"],
+  1054: ["coordTool", "coordFromMapTool", "ccfTool"],
+  520: ["coordTool", "coordFromMapTool", "zsoTool"],
+  966: ["coordTool", "coordFromMapTool", "settlTool"],

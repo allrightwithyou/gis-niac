@@ -51,12 +51,8 @@ export default function Header({ section, onToggleSidebar }: HeaderProps) {
         </div>
 
         <div className="flex flex-col">
-          <span className="text-title text-[12px] sm:text-[16px]">
-            {section.name}
-          </span>
-          <span className="text-hero text-[10px] sm:text-[12px]">
-            {section.category}
-          </span>
+          <span className="text-title text-[12px] sm:text-[16px]">{section.name}</span>
+          <span className="text-hero text-[10px] sm:text-[12px]">{section.category}</span>
         </div>
         <div className="flex justify-center shadow items-center h-[23px] uppercase text-accent text-[12px]  rounded-full py-[4px] px-[6px] sm:px-[12px] w-fit bg-bglogo border-[1.5px] border-accent/30">
           <span>{section.shortName}</span>

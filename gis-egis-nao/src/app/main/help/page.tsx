@@ -31,7 +31,7 @@ export default function HelpPage() {
       <div className="max-w-[1400px] w-full flex flex-col gap-[34px]">
         <Link
           href="/main/"
-          className="flex gap-[6px] pr-[12px] flex-row items-center border-r-[1px] border-margin "
+          className="flex gap-[6px] pr-[12px] flex-row items-center border-margin "
         >
           <Image
             className="block"
@@ -50,7 +50,7 @@ export default function HelpPage() {
           </span>
         </div>
         <div className="flex flex-col gap-[15px]">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl text-title">
             Справка по работе с системой
           </h1>
           <p className="text-balance text-hero text-sm sm:text-base">
@@ -105,7 +105,7 @@ export default function HelpPage() {
                     type="button"
                     onClick={() => setOpenIndex(isOpen ? null : index)}
                     aria-expanded={isOpen}
-                    className="p-[15px] w-full text-[14px] sm:text-base flex justify-between items-center"
+                    className="p-[15px] w-full text-[14px] text-title sm:text-base flex justify-between items-center"
                   >
                     <span>{item.question}</span>
                     <span

@@ -14,9 +14,29 @@ export interface WebMap {
 export interface CardProps {
   section: SectionData;
   webMaps: WebMap[];
+  /** Поисковый запрос (в нижнем регистре). Пусто — обычный вид карточки. */
+  query?: string;
 }
 
-export default function Card({ section, webMaps }: CardProps) {
+/** Выделяет в тексте найденный фрагмент запроса. */
+function highlight(text: string, query: string) {
+  if (!query) return text;
+
+  const index = text.toLowerCase().indexOf(query);
+  if (index === -1) return text;
+
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="rounded-[3px] bg-bglogo text-accent">
+        {text.slice(index, index + query.length)}
+      </mark>
+      {text.slice(index + query.length)}
+    </>
+  );
+}
+
+export default function Card({ section, webMaps, query = "" }: CardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const {
     name,
@@ -31,10 +51,23 @@ export default function Card({ section, webMaps }: CardProps) {
   // ID которых указаны у данной карточки
   const availableMaps = webMaps.filter((map) => resourceIds.includes(map.id));
 
+  // Поиск: если запрос совпал с названием раздела, карточка выглядит как обычно;
+  // если совпали только карты внутри — карточка раскрывается и показывает только их
+  const q = query.trim().toLowerCase();
+  const sectionMatches =
+    !q ||
+    name.toLowerCase().includes(q) ||
+    shortName.toLowerCase().includes(q);
+  const mapsToShow =
+    q && !sectionMatches
+      ? availableMaps.filter((map) => map.name.toLowerCase().includes(q))
+      : availableMaps;
+  const forcedOpen = q !== "" && !sectionMatches && mapsToShow.length > 0;
+
   // Открытое состояние
-  if (isOpen) {
+  if (isOpen || forcedOpen) {
     return (
-      <div className="h-full bg-white p-[20px] min-h-[225px] h-full flex flex-col max-w-[230px] min-w-[170px] border-[1.5px] border-margin rounded-[12px] shadow-xl">
+      <div className="h-full bg-white p-[20px] min-h-[230px] max-h-[255px] max-w-[230px] min-w-[170px] h-full flex flex-col border-[1.5px] border-margin rounded-[12px] shadow-xl">
         {/* Заголовок */}
         <div className="flex items-start justify-between mb-[16px]">
           <div className="flex flex-col gap-[4px]">
@@ -43,28 +76,31 @@ export default function Card({ section, webMaps }: CardProps) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className="text-[20px] leading-none text-footer hover:text-accent cursor-pointer"
-            aria-label="Закрыть"
-          >
-            ×
-          </button>
+          {/* При поиске карточка раскрыта автоматически — закрывать её не нужно */}
+          {!forcedOpen && (
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="text-[20px] leading-none text-footer hover:text-accent cursor-pointer"
+              aria-label="Закрыть"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         {/* Список карт */}
         <div className="flex flex-col overflow-y-auto">
-          {availableMaps.length === 0 ? (
-            <span className="text-[12px] text-footer">Доступных карт нет</span>
+          {mapsToShow.length === 0 ? (
+            <span className="text-[14px] text-footer">Доступных карт нет</span>
           ) : (
-            availableMaps.map((map) => (
+            mapsToShow.map((map) => (
               <Link
                 href={`/map/${map.id}`}
                 key={map.id}
-                className="w-full text-left text-[14px] pb-[3px] text-card hover:text-accent transition cursor-pointer border-black/10 border-b-[1px]"
+                className="w-full text-left text-[13px] pb-[3px] text-card hover:text-accent transition cursor-pointer border-black/10 border-b-[1px]"
               >
-                {map.name}
+                {highlight(map.name, q)}
               </Link>
             ))
           )}
@@ -78,7 +114,7 @@ export default function Card({ section, webMaps }: CardProps) {
     <button
       type="button"
       onClick={() => setIsOpen(true)}
-      className="cursor-pointer h-full shadow-xl group bg-white p-[20px] gap-[16px] flex flex-col items-start max-w-[230px] min-w-[170px] border-[1.5px] border-margin rounded-[12px] min-h-[225px]  max-h-[240px] shadow-[1px] hover:[box-shadow:inset_0_-8px_24px_0_var(--shadow-color)] text-left cursor-pointer"
+      className="cursor-pointer h-full shadow-xl group bg-white p-[20px] gap-[16px] flex flex-col items-start min-h-[230px] max-h-[255px] max-w-[230px] min-w-[170px] border-[1.5px] border-margin rounded-[12px]  shadow-[1px] hover:[box-shadow:inset_0_-8px_24px_0_var(--shadow-color)] text-left cursor-pointer"
       style={
         {
           "--shadow-color": shadowColor,
@@ -97,8 +133,8 @@ export default function Card({ section, webMaps }: CardProps) {
 
       {/* Название и категория */}
       <div className="flex flex-col h-[80px] w-full items-start">
-        <div className="text-left flex-1 text-[14px] text-card ">
-          <span>{name}</span>
+        <div className="text-left flex-1 text-[14px] text-card pb-[2px] ">
+          <span>{highlight(name, q)}</span>
         </div>
 
         <div className="text-[12px] flex items-start border-t-[1.5px] pt-[12px] border-black/[12%] w-full text-accent/70">

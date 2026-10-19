@@ -21,16 +21,24 @@ export default function Hero({ webMaps, sections }: HeroProps) {
   const objectMap = "4500+";
   const layersMap = "200+";
 
-  const filteredSections = sections.filter((section) => {
-    const query = search.toLowerCase().trim();
+  const query = search.toLowerCase().trim();
 
+  // Раздел подходит, если запрос есть в его названии или в названии любой его карты
+  const filteredSections = sections.filter((section) => {
     if (!query) {
       return true;
     }
 
+    const hasMatchingMap = webMaps.some(
+      (map) =>
+        section.resourceIds.includes(map.id) &&
+        map.name.toLowerCase().includes(query),
+    );
+
     return (
       section.name.toLowerCase().includes(query) ||
-      section.shortName.toLowerCase().includes(query)
+      section.shortName.toLowerCase().includes(query) ||
+      hasMatchingMap
     );
   });
 
@@ -83,9 +91,9 @@ export default function Hero({ webMaps, sections }: HeroProps) {
             onChange={(e) => setText(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder="Поиск по разделам..."
-            className="text-[14px] w-full focus:border-none outline-none focus:outline-none"
-            aria-label="Поиск по разделам"
+            placeholder="Поиск по разделам и картам..."
+            className="text-[14px] w-full focus:border-none outline-none focus:outline-none input-focus"
+            aria-label="Поиск по разделам и картам"
           />
         </div>
 
@@ -134,7 +142,7 @@ export default function Hero({ webMaps, sections }: HeroProps) {
 
         {/* Карточки */}
         <div>
-          <Cards cards={filteredSections} webMaps={webMaps} />
+          <Cards cards={filteredSections} webMaps={webMaps} query={query} />
         </div>
       </div>
     </div>

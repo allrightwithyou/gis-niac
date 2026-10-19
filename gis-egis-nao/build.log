@@ -1,0 +1,80 @@
+nohup: ввод игнорируется
+STEP 1/15: FROM gis-nextjs-base
+STEP 2/15: WORKDIR /app
+--> Using cache fa2632089dad4f3770245f5f47e9fa8c2604f7f4455308d61084f2c2deaa1ddc
+--> fa2632089dad
+STEP 3/15: COPY . .
+--> 3a6c7096953b
+STEP 4/15: ARG NEXT_PUBLIC_NGW_BASE_URL
+--> c594023b878f
+STEP 5/15: ENV NEXT_PUBLIC_NGW_BASE_URL=$NEXT_PUBLIC_NGW_BASE_URL
+--> 58312a7c9e0b
+STEP 6/15: ENV NEXT_TELEMETRY_DISABLED=1
+--> e4d1c37938e8
+STEP 7/15: ENV NODE_OPTIONS=--use-system-ca
+--> 092de1e692a5
+STEP 8/15: RUN yarn build
+▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env.local, .env
+✓ Running next.config.ts took 113ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.1s
+  Skipping validation of types
+  Finished TypeScript config validation in 22ms ...
+  Collecting page data using 19 workers ...
+  Generating static pages using 19 workers (0/9) ...
+  Generating static pages using 19 workers (2/9) 
+  Generating static pages using 19 workers (4/9) 
+  Generating static pages using 19 workers (6/9) 
+✓ Generating static pages using 19 workers (9/9) in 1078ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin
+├ ○ /admin/login
+├ ƒ /admin/news
+├ ƒ /api/admin/login
+├ ƒ /api/admin/logout
+├ ƒ /api/admin/maps
+├ ƒ /api/admin/maps/[id]/password
+├ ƒ /api/admin/news
+├ ƒ /api/admin/news/[id]
+├ ƒ /api/admin/sections
+├ ƒ /api/maps/[id]/tools
+├ ƒ /api/maps/[id]/unlock
+├ ƒ /main
+├ ○ /main/help
+├ ƒ /main/news
+├ ○ /main/support
+├ ○ /main/system
+├ ƒ /map/[name]
+├ ○ /panorama
+└ ƒ /panorama/[...file]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+--> 4cbc4848ddca
+STEP 9/15: RUN cp -r .next/static .next/standalone/.next/static
+--> 616fdc655abd
+STEP 10/15: RUN cp -r public .next/standalone/public
+--> 71882feca5c2
+STEP 11/15: ENV NODE_ENV=production
+--> c32a6933ca63
+STEP 12/15: ENV PORT=3011
+--> 416034226a1e
+STEP 13/15: ENV HOSTNAME=0.0.0.0
+--> e5d66b2b2be4
+STEP 14/15: EXPOSE 3011
+--> 88f058334411
+STEP 15/15: CMD ["node", ".next/standalone/server.js"]
+COMMIT gis-egis-nao_nextjs
+--> cbab2044e328
+Successfully tagged localhost/gis-egis-nao_nextjs:latest
+cbab2044e328c0474c576c360037db8fd4a552bef9166227f1437432611b9bc7

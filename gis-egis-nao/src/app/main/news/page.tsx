@@ -13,12 +13,26 @@ import NewsCard from "../components/NewsCard";
 // Новости читаются из базы при каждом запросе, а не один раз при сборке образа
 export const dynamic = "force-dynamic";
 
+/**
+ * Прежний файл новостей. Пути записаны литералами (а не через переменную):
+ * иначе сборщик не может определить, какой файл читается, и «трассирует» весь проект.
+ */
+async function readLegacyNewsFile(): Promise<string> {
+  try {
+    return await readFile(path.join(process.cwd(), "gisnao.news"), "utf8");
+  } catch {
+    return await readFile(path.join(process.cwd(), "geoportal.news"), "utf8");
+  }
+}
+
 export default async function NewsPage() {
   let news: CardNews[] = [];
   let failed = false;
 
   try {
     const rows = await getPublishedNews();
+
+    console.info(`Новости из базы: ${rows.length} шт.`);
 
     // Приводим к виду, который ждёт NewsCard: нумерация 01, 02… сверху вниз, дата «дд.мм.гггг»,
     // категория — плашка, текст (с HTML-ссылками) — в поле title
@@ -32,14 +46,15 @@ export default async function NewsPage() {
         }) as unknown as CardNews,
     );
   } catch (error) {
-    console.error("getPublishedNews failed, используется файл gisnao.news:", error);
+    console.error("getPublishedNews failed, используется файл новостей:", error);
 
     try {
-      const fileContents = await readFile(path.join(process.cwd(), "gisnao.news"), "utf8");
+      const fileContents = await readLegacyNewsFile();
+
       news = parseNewsFile(fileContents);
     } catch (fileError) {
       failed = true;
-      console.error("Не удалось прочитать и gisnao.news:", fileError);
+      console.error("Не удалось прочитать и файл новостей:", fileError);
     }
   }
 
@@ -48,7 +63,7 @@ export default async function NewsPage() {
       <div className="max-w-[1400px] w-full flex flex-col gap-[34px]">
         <Link
           href="/main/"
-          className="flex gap-[6px] pr-[12px] flex-row items-center border-r-[1px] border-margin "
+          className="flex gap-[6px] pr-[12px] flex-row items-center border-margin "
         >
           <Image
             className="block"
@@ -69,7 +84,7 @@ export default async function NewsPage() {
         </div>
 
         <div className="flex flex-col gap-[15px]">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl">Новости системы</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl text-title">Новости системы</h1>
           <p className="text-balance text-hero text-sm sm:text-base">
             Обновления геопортала, новые наборы данных и важные события цифровой
             инфраструктуры округа.

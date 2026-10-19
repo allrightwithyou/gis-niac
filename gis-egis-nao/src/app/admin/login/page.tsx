@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
           placeholder="Логин"
           value={login}
           onChange={(event) => setLogin(event.target.value)}
-          className="rounded-[8px] border border-black/10 px-[12px] py-[8px] text-[14px] outline-none focus:border-accent"
+          className="rounded-[8px] border border-black/10 px-[12px] py-[8px] text-[14px] text-hero outline-none focus:border-accent"
         />
 
         <input
@@ -60,7 +60,7 @@ export default function AdminLoginPage() {
           placeholder="Пароль"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="rounded-[8px] border border-black/10 px-[12px] py-[8px] text-[14px] outline-none focus:border-accent"
+          className="rounded-[8px] border border-black/10 px-[12px] py-[8px] text-[14px] text-hero outline-none focus:border-accent"
         />
 
         {error && <p className="text-[13px] text-red-600">{error}</p>}

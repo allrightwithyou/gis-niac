@@ -25,9 +25,9 @@ export default function ButtonSidebar({ layer, onToggle }: ButtonSidebarProps) {
           : "var(--color-profile)",
         borderColor: layer.active ? "var(--color-accent)" : "rgba(0,0,0,0.12)",
       }}
-      className="flex shadow items-center justify-between p-[12px] bg-white border-[2px] border-grey rounded-[12px] transition-colors cursor-pointer select-none"
+      className="flex w-full shadow items-center justify-between p-[12px] bg-white border-[2px] border-grey rounded-[12px] transition-colors cursor-pointer select-none"
     >
-      <div className="text-wrap w-[200px]">
+      <div className="text-wrap flex-1">
         <span
           className={`text-sm font-medium transition-colors duration-300 ${
             layer.active ? "text-gray-900 font-bold" : "text-gray-400"

@@ -28,10 +28,10 @@ create table if not exists map_tools (
   primary key (resource_id, tool_id)
 );
 
--- Новости (текст в Markdown)
+-- Новости (категория, дата, текст с HTML-ссылками)
 create table if not exists news (
   id           serial primary key,
-  title        text    not null,
+  category     text    not null,
   published_at date    not null,
   body         text    not null,
   published    boolean not null default true,
@@ -39,3 +39,10 @@ create table if not exists news (
 );
 
 create index if not exists news_published_at_idx on news (published_at desc, id desc);
+
+-- Пароли карт (хранится только хеш)
+create table if not exists map_passwords (
+  resource_id   integer primary key,
+  password_hash text    not null,
+  updated_at    timestamptz not null default now()
+);

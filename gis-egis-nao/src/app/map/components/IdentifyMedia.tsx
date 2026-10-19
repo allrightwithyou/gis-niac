@@ -20,8 +20,7 @@ import { createPortal } from "react-dom";
 
 /** Адрес хранилища фотографий (можно переопределить через NEXT_PUBLIC_BGSTORAGE_URL). */
 const BGSTORAGE_URL = (
-  process.env.NEXT_PUBLIC_BGSTORAGE_URL ??
-  "https://geoportal.adm-nao.ru/bgstorage"
+  process.env.NEXT_PUBLIC_BGSTORAGE_URL ?? "https://geoportal.adm-nao.ru/bgstorage"
 ).replace(/\/$/, "");
 
 const PHOTO_PREFIX = "bg_picture_link:";
@@ -47,8 +46,8 @@ export function isMediaValue(value: unknown): boolean {
 }
 
 /** Размеры плеера камеры в сайдбаре (передаются во встраиваемую страницу). */
-const CAM_WIDTH = 288;
-const CAM_HEIGHT = 170;
+const CAM_WIDTH = 338;
+const CAM_HEIGHT = 190;
 
 const CAM_EMBED_URL = "https://cam.ncec.ru/site/embed.html";
 
@@ -134,23 +133,17 @@ export function getItemMedia(item: MediaItem): {
     }
   }
 
-  const photos = [
-    ...new Set(fileNames.map((name) => name.trim()).filter(Boolean)),
-  ].map(toPhoto);
-
-  const camRaw = toList(
-    findValue(properties, (key) => /^cam[_-]?id$/i.test(key)),
+  const photos = [...new Set(fileNames.map((name) => name.trim()).filter(Boolean))].map(
+    toPhoto,
   );
+
+  const camRaw = toList(findValue(properties, (key) => /^cam[_-]?id$/i.test(key)));
 
   // «camid:» без номера в значении — номер лежит в отдельном свойстве camid (как в оригинале)
   const camFromProperty = camMarkerSeen
-    ? String(camRaw[0] ?? "")
-        .replace(/^\s*camid\s*:\s*/i, "")
-        .trim() || null
+    ? String(camRaw[0] ?? "").replace(/^\s*camid\s*:\s*/i, "").trim() || null
     : null;
-  const seeAlso = toList(
-    findValue(properties, (key) => /^cam[_-]?ids$/i.test(key)),
-  );
+  const seeAlso = toList(findValue(properties, (key) => /^cam[_-]?ids$/i.test(key)));
 
   return {
     photos,
@@ -186,12 +179,9 @@ function PhotoGallery({ photos }: { photos: Photo[] }) {
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpenIndex(null);
-      if (event.key === "ArrowRight")
-        setOpenIndex((i) => (i === null ? i : (i + 1) % visible.length));
+      if (event.key === "ArrowRight") setOpenIndex((i) => (i === null ? i : (i + 1) % visible.length));
       if (event.key === "ArrowLeft") {
-        setOpenIndex((i) =>
-          i === null ? i : (i - 1 + visible.length) % visible.length,
-        );
+        setOpenIndex((i) => (i === null ? i : (i - 1 + visible.length) % visible.length));
       }
     };
 
@@ -275,9 +265,7 @@ function PhotoGallery({ photos }: { photos: Photo[] }) {
                   className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/20 px-3 py-2 text-xl text-white hover:bg-white/30"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setOpenIndex(
-                      (openIndex - 1 + visible.length) % visible.length,
-                    );
+                    setOpenIndex((openIndex - 1 + visible.length) % visible.length);
                   }}
                 >
                   ‹
@@ -367,18 +355,7 @@ const iconClass = "inline-block align-middle";
 
 function ShareIcon() {
   return (
-    <svg
-      className={iconClass}
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <svg className={iconClass} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="18" cy="5" r="3" />
       <circle cx="6" cy="12" r="3" />
       <circle cx="18" cy="19" r="3" />
@@ -389,18 +366,7 @@ function ShareIcon() {
 
 function PanoramaIcon() {
   return (
-    <svg
-      className={iconClass}
-      width="24"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <svg className={iconClass} width="24" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M2 6c6 2.5 14 2.5 20 0v12c-6-2.5-14-2.5-20 0z" />
       <circle cx="8" cy="10.5" r="1.3" />
       <path d="M4 16l5-4 3 2.5 3-3 5 4" />
@@ -432,13 +398,7 @@ export function IdentifyFieldValue({
 
   if (/^https?:\/\//.test(text)) {
     return (
-      <a
-        href={text}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Подробнее"
-        className={linkClass}
-      >
+      <a href={text} target="_blank" rel="noopener noreferrer" title="Подробнее" className={linkClass}>
         <ShareIcon />
       </a>
     );
@@ -446,11 +406,7 @@ export function IdentifyFieldValue({
 
   if (text.startsWith("redbook_link:")) {
     return (
-      <a
-        href={`/redbook/${text.replace("redbook_link:", "")}/view`}
-        title="Подробнее"
-        className={linkClass}
-      >
+      <a href={`/redbook/${text.replace("redbook_link:", "")}/view`} title="Подробнее" className={linkClass}>
         <ShareIcon />
       </a>
     );

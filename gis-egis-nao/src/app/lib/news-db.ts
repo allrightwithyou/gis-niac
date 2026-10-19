@@ -3,7 +3,7 @@ import type { NewsItem } from "./news-format";
 
 interface NewsRow {
   id: number;
-  title: string;
+  category: string;
   date: string;
   body: string;
   published: boolean;
@@ -11,7 +11,7 @@ interface NewsRow {
 
 // to_char — чтобы дата приходила строкой «ГГГГ-ММ-ДД», без сдвига часовых поясов
 const SELECT = `
-  select id, title, to_char(published_at, 'YYYY-MM-DD') as date, body, published
+  select id, category, to_char(published_at, 'YYYY-MM-DD') as date, body, published
   from news
 `;
 
@@ -19,7 +19,7 @@ const ORDER = "order by published_at desc, id desc";
 
 const toItem = (row: NewsRow): NewsItem => ({
   id: row.id,
-  title: row.title,
+  category: row.category,
   date: row.date,
   body: row.body,
   published: row.published,
